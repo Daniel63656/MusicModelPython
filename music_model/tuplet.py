@@ -10,7 +10,6 @@ if t.TYPE_CHECKING:
     from .staff import Staff
     from .chord import Chord
     from .note import Note
-    from .rest import Rest
     
 
 class Tuplet(Site, Element):
@@ -52,4 +51,9 @@ class Tuplet(Site, Element):
         return self._onset + self.get_duration()
     
     def get_duration(self) -> Fraction:
-        return self._note_type.get_value(self._dots)*self._normal_count
+        duration = self._note_type.get_value(self._dots)*self._normal_count
+        site = self._site
+        while hasattr(site, "_site"):
+            duration *= site._time_mod
+            site = site._site
+        return duration

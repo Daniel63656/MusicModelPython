@@ -7,7 +7,7 @@ from .event import Event
 
 import typing as t
 if t.TYPE_CHECKING:
-    from typing import Iterator
+    from typing import Iterator, Optional
     from .staff import Staff
     from .tuplet import Tuplet
     from .abstract import Element, ChordRest
@@ -31,6 +31,11 @@ class Site(Range):
             inclusive of both start and end.
         """ 
         return (self._elements[key] for key in self._elements.irange(start, end, inclusive, reverse))
+    
+    def get_element(self, time: Fraction) -> Optional[Element]:
+        """ Get the element at an exact time or None if no element exists at that time.
+        """
+        return self._elements[time]
     
     def get_chords_and_rests(self, start: Fraction = None, end: Fraction = None, inclusive=(True, True), reverse: bool = False) -> Iterator[ChordRest]:
         """ Create an iterator of all chords and rests in a flattened view (this site and

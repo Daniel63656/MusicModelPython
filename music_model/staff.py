@@ -5,7 +5,7 @@ from .abstract import Range
 
 import typing as t
 if t.TYPE_CHECKING:
-    from typing import Iterator, Iterable
+    from typing import Iterator, Iterable, Optional
     from fractions import Fraction
     from .part import Part
     from .event import Event
@@ -45,6 +45,11 @@ class Staff(Range):
             inclusive of both start and end.)
         """ 
         return (self._events[key] for key in self._events.irange(start, end, inclusive, reverse))
+    
+    def get_event(self, time: Fraction) -> Optional[Event]:
+        """ Get the event at an exact time or None if no event exists at that time.
+        """
+        return self._events[time]
     
     def get_chords_and_rests(self, start: Fraction = None, end: Fraction = None, borders = (True, False), reverse: bool = False) -> Iterator[ChordRest]:
         """ Create an iterator of chords and rests between `start` and `end`.
