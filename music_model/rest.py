@@ -1,0 +1,37 @@
+from __future__ import annotations
+from .abstract import ChordRest
+from .tuplet import Tuplet
+from .enums import NoteType
+
+import typing as t
+if t.TYPE_CHECKING:
+    from fractions import Fraction
+
+
+class Rest(ChordRest):
+    def __init__(self, note_type: NoteType, dots: int, measure_duration: Fraction = None, invisible=False):
+        if measure_duration is None:
+            self._nominal_duration = note_type.get_value(dots)
+            self._is_measure_rest = False
+        else:
+            self._nominal_duration = measure_duration
+            self._is_measure_rest = True
+            note_type = NoteType.WHOLE
+            dots = 0
+        self._invisible = invisible
+        super().__init__(note_type, dots)
+
+    def get_duration(self) -> Fraction:
+        duration = self._nominal_duration
+        site = self._site
+        while isinstance(site, Tuplet):
+            duration *= site._time_mod
+            site = site._site
+        return duration
+    
+    def is_measure_rest(self) -> bool:
+        return self._is_measure_rest
+    
+    def __str__(self):
+        dots_str = '.' * self._dots
+        return f"Rest({self._note_type}{dots_str})"
