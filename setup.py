@@ -4,6 +4,9 @@ setup(
     name='music_model',
     version='1.0.0',
     packages=find_packages(),
+    install_requires=[
+        'sortedcontainers'
+    ],
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url='https://github.com/Daniel63656/MusicModelPython',
