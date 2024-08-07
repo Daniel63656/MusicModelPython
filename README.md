@@ -1,14 +1,5 @@
 ## MusicModel
 
-The Geometry Package is a Python library designed to compute geometric properties and provide access to topological information of various geometric primitives used in computational grids and simulations. The project features following geometric primitives which are all derived from an abstract `Geometry` class:
-- Segment
-- Triangle
-- Quadrilateral
-- Tetrahedron
-
-Additionally, the package includes a `Point` class, which inherits from Python's tuple and serves as a fundamental building block for defining positions in Cartesian coordinates.
-The `Face` interface provides access to the boundaries and properties of the defined primitives, while also extending the `Geometry` interface. All available interfaces and classes, as well as their methods and relations are illustrated in this class diagram:
-
 ```mermaid
 classDiagram
     class Score {
@@ -146,25 +137,7 @@ Installation
 
 To use this package in your project, clone the repository, navigate into its root directory and install the package into your Python environment:
 ```bash
-cd geometry
+cd MusicModelPython
 pip install .
 ```
-After that, all classes will be accessible within the `geometry` package namespace.
-
-Example Usage
-=======================
-
-```python
-from geometry import Point, Triangle
-
-# create a triangle in 2D domain and query its area:
-p1 = Point(0.0, 0.0)
-p2 = Point(4.0, 0.0)
-p3 = Point(2.0, 3.0)
-triangle = Triangle(p1, p2, p3)
-area = triangle.get_volume()
-
-# print outer normal vector from all the faces of the triangle
-for face in triangle.get_faces():
-    print(face.get_outer_normal_vector())
-```
+After that, all classes will be accessible within the `music_model` package namespace.
