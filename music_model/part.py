@@ -6,14 +6,22 @@ from .voice import Voice
 import typing as t
 if t.TYPE_CHECKING:
     from typing import Iterable, Optional
+    from .score import Score
 
 
 class Part():
     def __init__(self):
         self._score = None
+        self._idx = None
         # these will auto-add staffs/voices if querrying a new key
         self._staffs = SafeDict(lambda id: self.insert_staff(id, Staff()))
         self._voices = SafeDict(lambda id: self.insert_voice(id, Voice()))
+
+    def get_score(self) -> Score:
+        return self._score
+
+    def get_idx(self) -> int:
+        return self._ix
 
     def get_staffs(self) -> Iterable[Staff]:
         return self._staffs.values()

@@ -15,3 +15,4 @@ class Score():
     def append_part(self, part: Part):
         self._parts.append(part)
         part._score = self
+        part._idx = len(self._parts) - 1
