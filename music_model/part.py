@@ -21,7 +21,7 @@ class Part():
         return self._score
 
     def get_idx(self) -> int:
-        return self._ix
+        return self._idx
 
     def get_staffs(self) -> Iterable[Staff]:
         return self._staffs.values()

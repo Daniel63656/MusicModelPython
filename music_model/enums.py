@@ -85,52 +85,28 @@ class NoteName(Enum):
     @classmethod
     def from_diatonic_index(cls, diatonic_index):
         return list(cls)[diatonic_index]
-    
+ 
 
-class Clef(Enum):
-    TREBLE = (2, NoteName.G, 4)
-    BASS = (4, NoteName.F, 3)
-    SOPRANO = (1, NoteName.C, 4)
-    MEZZO_SOPRANO = (2, NoteName.C, 4)
-    ALTO = (3, NoteName.C, 4)
-    TENOR = (4, NoteName.C, 4)
-    BARITONE = (5, NoteName.C, 4)
-    TAB = (5, NoteName.F, 5)
-    PERCUSSION = (3, None, None)
-    JIANPU = (0, None, None)
+class ClefType(Enum):
+    TREBLE = (2, NoteName.G)
+    BASS = (4, NoteName.F)
+    SOPRANO = (1, NoteName.C)
+    MEZZO_SOPRANO = (2, NoteName.C)
+    ALTO = (3, NoteName.C)
+    TENOR = (4, NoteName.C)
+    BARITONE = (5, NoteName.C)
+    TAB = (5, NoteName.F)
+    PERCUSSION = (3, None)
+    JIANPU = (0, None)
 
-    def __new__(cls, staff_line: int, note_name: NoteName, octave: int):
-        obj = object.__new__(cls)
-        obj._value_ = (staff_line, note_name, octave)
-        return obj
-
-    def __init__(self, staff_line: int, note_name: NoteName, octave: int):
-        # value is already set in __new__ but parameters must be in __init__ still
-        self.c0_reference_line = None
-        if note_name is not None and octave is not None:
-            self.c0_reference_line = (staff_line - 1) * 2 - note_name.get_diatonic_index() - octave * 7
-
-    def get_staff_line(self):
+    def get_staff_line(self) -> int:
         """
-        count staff-lines with the lowest being 1 and highest 5.
+        counted staff-lines with the lowest being 1 and highest 5.
         """
         return self.value[0]
     
-    def get_note_name(self):
+    def get_note_name(self) -> NoteName:
         return self.value[1]
-    
-    def get_octave(self):
-        return self.value[2]
-
-    def get_reference_line(self):
-        """
-        reference-lines count every possible note position in a staff, counted upwards and starting from the bottom line
-        of the staff as being 0
-        """
-        return (self.value[0] - 1) * 2
-
-    def get_c0_reference_line(self):
-        return self.c0_reference_line
 
 
 _note_type_by_common_name = {}

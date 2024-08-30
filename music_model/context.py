@@ -1,4 +1,33 @@
 from fractions import Fraction
+from .enums import ClefType
+
+
+class Clef():
+    def __init__(self, clef_type, octave):
+        self._clef_type = clef_type
+        self._octave = octave
+        self._C0_reference_line = None
+        if clef_type.value[1] is not None:
+            self._C0_reference_line = (clef_type.value[0] - 1) * 2 - clef_type.value[1].get_diatonic_index() - octave * 7
+    
+    def get_clef_type(self) -> ClefType:
+        return self._clef_type
+    
+    def get_octave(self) -> int:
+        return self._octave
+
+    def get_staff_line_position(self) -> int:
+        """
+        staff line positions (slp) count every possible note position in a staff, counted upwards and starting from the bottom line
+        of the staff as being 0
+        """
+        return (self.clef_type.value[0] - 1) * 2
+
+    def get_C0_reference_line(self):
+        """
+        returns: staff line position (slp) of C0 in the clef. Used for pitch calculations.
+        """
+        return self._C0_reference_line
 
 
 class KeySignature:

@@ -43,7 +43,7 @@ def import_xml(filepath) -> Score:
                 elif elem.tag == "beat-type":
                     denominator = int(elem.text)
                 else:
-                    raise ValueError("symbolic time signature must be 4/4 or 2/2.")
+                    raise ValueError("Symbolic time signature must be 4/4 or 2/2.")
             symbolic = root.attrib.get("symbol") == "common" or root.attrib.get("symbol") == "cut"
             if number is not None:
                 part._staffs[int(number) - 1].insert_time_signature(cursor, TimeSignature(numerator, denominator, symbolic))
@@ -68,27 +68,48 @@ def import_xml(filepath) -> Score:
             # clef is different, here no number means first staff
             number = root.attrib.get("number")
             staff_number = 0
-            clef = None
+            clef_type = None
+            octave = 4
             if number is not None:
                 staff_number = int(number) - 1
             for elem in root:
                 if elem.tag == "sign":
                     clef_name = elem.text
                     if clef_name == "G":
-                        clef = Clef.TREBLE
+                        clef_type = ClefType.TREBLE
                     elif clef_name == "F":
-                        clef = Clef.BASS
+                        clef_type = ClefType.BASS
+                        octave = 3
                     elif clef_name == "C":
-                        clef = Clef.MEZZO_SOPRANO
+                        clef_type = ClefType.ALTO    # standard C-clef if no line given -> line=3
                     elif clef_name == "percussion":
-                        clef = Clef.PERCUSSION
+                        clef_type = ClefType.PERCUSSION
                     elif clef_name == "TAB":
-                        raise ValueError("TABs not supported due to lack of tests!")
+                        raise ValueError("TABs not supported due to lack of tests.")
                     else:
-                        raise ValueError("Couldn't resolve clef with name: " + clef_name)
+                        raise ValueError(f"Couldn't resolve clef with name: {clef_name}")
+                elif elem.tag == "line":
+                    if clef_type == ClefType.ALTO:
+                        staff_line = int(elem.text)
+                        if staff_line == 1:
+                            clef_type = ClefType.SOPRANO
+                        elif staff_line == 2:
+                            clef_type = ClefType.MEZZO_SOPRANO
+                        elif staff_line == 3:
+                            clef_type = ClefType.ALTO
+                        elif staff_line == 4:
+                            clef_type = ClefType.TENOR
+                        elif staff_line == 5:
+                            clef_type = ClefType.BARITONE
+                        else:
+                            raise ValueError(f"Invalid line parameter {staff_line} for C clef.")
                 elif elem.tag == "clef-octave-change":
-                    raise NotImplementedError("Transposed clefs are not implemented!")
-            part._staffs[staff_number].insert_clef(cursor, clef)
+                    if clef_type != ClefType.TREBLE or clef_type != ClefType.BASS:
+                        raise ValueError("Only G and F clefs can have octave variations.")
+                    octave = int(elem.text)
+            if clef_type is None:
+                raise ValueError("Mandatory attribute 'sign' missing from clef definition.")
+            part._staffs[staff_number].insert_clef(cursor, Clef(clef_type, octave))
                     
         def tie_if_needed(note, tie_start, tie_stop):
             if tie_stop:
@@ -386,13 +407,13 @@ def import_xml(filepath) -> Score:
     # =============== READ THE FILE =============
     extension = os.path.splitext(filepath)[1]
     if extension != ".xml" and extension != ".musicxml":
-        raise ValueError("Invalid file extension. Must be .xml or .musicxml")
+        raise ValueError("Invalid file extension. Must be .xml or .musicxml.")
     
     with open(filepath, "r") as file:
         tree = ET.parse(file)
         root = tree.getroot()
         if root.tag != 'score-partwise':
-            raise Exception(f"Cannot parse MusicXML files not in score-partwise. Root tag was {root.tag}")
+            raise Exception(f"Cannot parse MusicXML files in {root.tag}.")
         
         score = Score()
         # traverse xml elements only once

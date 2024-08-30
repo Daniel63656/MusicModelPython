@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
     from .staff import Staff
     from .event import Event
     from .chord import ChordRest
-    from .signatures import TimeSignature
+    from .context import TimeSignature
 
 
 class Measure(NavigableRange):

@@ -10,8 +10,8 @@ if t.TYPE_CHECKING:
     from .part import Part
     from .event import Event
     from .abstract import ChordRest
-    from .enums import Clef, Ottavation
-    from .signatures import KeySignature, TimeSignature
+    from .enums import Ottavation
+    from .context import Clef, KeySignature, TimeSignature
     from .octave_shift import OctaveShift
     from .measure import Measure
 
@@ -67,6 +67,9 @@ class Staff(Range):
 
     def get_measure(self, time: Fraction) -> Measure:
         return self._measures[time]
+    
+    def get_measures(self) -> Iterable[Measure]:
+        return self._measures.values()
     
     def get_measure_by_index(self, idx: int) -> Measure:
         return self._measures.values()[idx]

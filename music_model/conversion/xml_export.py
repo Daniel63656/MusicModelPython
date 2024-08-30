@@ -9,7 +9,7 @@ PATH_TO_MUSESCORE_EXE = "C:/Program Files/MuseScore 3/bin/MuseScore3.exe"
 
 
 def _parse_to_xml(score: Score, pretty: bool = False) -> str:
-    clefs_with_note_names = {Clef.TREBLE, Clef.BASS, Clef.SOPRANO, Clef.MEZZO_SOPRANO, Clef.ALTO, Clef.TENOR, Clef.BARITONE}
+    clefs_with_note_names = {ClefType.TREBLE, ClefType.BASS, ClefType.SOPRANO, ClefType.MEZZO_SOPRANO, ClefType.ALTO, ClefType.TENOR, ClefType.BARITONE}
     to_accidental_text = {
         Accidental.SHARP: "sharp",
         Accidental.FLAT: "flat",
@@ -88,8 +88,12 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
 
     def create_clef(xml_attributes, clef, number):
         xml_clef = ET.SubElement(xml_attributes, "clef", number=str(number))
-        ET.SubElement(xml_clef, "sign").text = clef.get_note_name().name if clef in clefs_with_note_names else clef.name
-        ET.SubElement(xml_clef, "line").text = str(clef.get_staff_line())
+        ET.SubElement(xml_clef, "sign").text = clef._clef_type.get_note_name().name if clef._clef_type in clefs_with_note_names else clef._clef_type.name
+        ET.SubElement(xml_clef, "line").text = str(clef._clef_type.get_staff_line())
+        if clef._clef_type == ClefType.TREBLE and clef._octave != 4:
+            ET.SubElement(xml_clef, "clef-octave-change").text = str(clef._octave)
+        elif clef._clef_type == ClefType.BASS and clef._octave != 3:
+            ET.SubElement(xml_clef, "clef-octave-change").text = str(clef._octave)
 
     def create_attributes_if_necessary(xml_measure, part, onset):
         nonlocal is_first_attributes
