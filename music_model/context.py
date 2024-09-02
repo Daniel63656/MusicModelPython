@@ -3,12 +3,14 @@ from .enums import ClefType
 
 
 class Clef():
-    def __init__(self, clef_type, octave):
+    def __init__(self, clef_type: ClefType, octave_shift: int=0):
         self._clef_type = clef_type
-        self._octave = octave
+        if octave_shift != 0 and clef_type != ClefType.TREBLE and clef_type != ClefType.BASS:
+            raise ValueError("Only G and F clefs can have octave variations.")
+        self._octave = clef_type.value[2] + octave_shift if clef_type.value[2] is not None else None
         self._C0_reference_line = None
         if clef_type.value[1] is not None:
-            self._C0_reference_line = (clef_type.value[0] - 1) * 2 - clef_type.value[1].get_diatonic_index() - octave * 7
+            self._C0_reference_line = (clef_type.value[0] - 1) * 2 - clef_type.value[1].get_diatonic_index() - self._octave * 7
     
     def get_clef_type(self) -> ClefType:
         return self._clef_type

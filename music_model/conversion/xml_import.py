@@ -69,7 +69,7 @@ def import_xml(filepath) -> Score:
             number = root.attrib.get("number")
             staff_number = 0
             clef_type = None
-            octave = 4
+            octave_shift = 0
             if number is not None:
                 staff_number = int(number) - 1
             for elem in root:
@@ -79,13 +79,12 @@ def import_xml(filepath) -> Score:
                         clef_type = ClefType.TREBLE
                     elif clef_name == "F":
                         clef_type = ClefType.BASS
-                        octave = 3
                     elif clef_name == "C":
                         clef_type = ClefType.ALTO    # standard C-clef if no line given -> line=3
                     elif clef_name == "percussion":
                         clef_type = ClefType.PERCUSSION
                     elif clef_name == "TAB":
-                        raise ValueError("TABs not supported due to lack of tests.")
+                        raise NotImplementedError("TABs not supported due to lack of tests.")
                     else:
                         raise ValueError(f"Couldn't resolve clef with name: {clef_name}")
                 elif elem.tag == "line":
@@ -104,12 +103,10 @@ def import_xml(filepath) -> Score:
                         else:
                             raise ValueError(f"Invalid line parameter {staff_line} for C clef.")
                 elif elem.tag == "clef-octave-change":
-                    if clef_type != ClefType.TREBLE or clef_type != ClefType.BASS:
-                        raise ValueError("Only G and F clefs can have octave variations.")
-                    octave = int(elem.text)
+                    octave_shift = int(elem.text)
             if clef_type is None:
                 raise ValueError("Mandatory attribute 'sign' missing from clef definition.")
-            part._staffs[staff_number].insert_clef(cursor, Clef(clef_type, octave))
+            part._staffs[staff_number].insert_clef(cursor, Clef(clef_type, octave_shift))
                     
         def tie_if_needed(note, tie_start, tie_stop):
             if tie_stop:

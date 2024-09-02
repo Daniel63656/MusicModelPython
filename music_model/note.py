@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
 
 
 class Note(Range):
-    def __init__(self, note_name: NoteName, octave: int, pitch: int, accidental: Accidental = None):
+    def __init__(self, note_name: NoteName, octave: int, pitch: int, accidental: Accidental=None):
         self._chord = None
         self._note_name = note_name
         self._octave = octave

@@ -1,6 +1,7 @@
 import math
 from enum import Enum
 from fractions import Fraction
+from typing import Optional
 from . import Self
 
 
@@ -88,16 +89,16 @@ class NoteName(Enum):
  
 
 class ClefType(Enum):
-    TREBLE = (2, NoteName.G)
-    BASS = (4, NoteName.F)
-    SOPRANO = (1, NoteName.C)
-    MEZZO_SOPRANO = (2, NoteName.C)
-    ALTO = (3, NoteName.C)
-    TENOR = (4, NoteName.C)
-    BARITONE = (5, NoteName.C)
-    TAB = (5, NoteName.F)
-    PERCUSSION = (3, None)
-    JIANPU = (0, None)
+    TREBLE = (2, NoteName.G, 4)
+    BASS = (4, NoteName.F, 3)
+    SOPRANO = (1, NoteName.C, 4)
+    MEZZO_SOPRANO = (2, NoteName.C, 4)
+    ALTO = (3, NoteName.C, 4)
+    TENOR = (4, NoteName.C, 4)
+    BARITONE = (5, NoteName.C, 4)
+    TAB = (5, NoteName.F, 5)
+    PERCUSSION = (3, None, None)
+    JIANPU = (0, None, None)
 
     def get_staff_line(self) -> int:
         """
@@ -105,8 +106,11 @@ class ClefType(Enum):
         """
         return self.value[0]
     
-    def get_note_name(self) -> NoteName:
+    def get_note_name(self) -> Optional[NoteName]:
         return self.value[1]
+    
+    def get_standard_octave(self) -> Optional[int]:
+        return self.value[2]
 
 
 _note_type_by_common_name = {}
