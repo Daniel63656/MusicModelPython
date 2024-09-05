@@ -326,7 +326,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 ET.SubElement(xml_barline, "repeat", direction="backward")
 
         # =============== END OF PART SCOPE FUNCTION DECLARATIONS =============
-        for measure in part._staffs[0]._measures.values():
+        for measure in part._measures.values():
             xml_measure = ET.SubElement(xml_part, "measure", number=str(measure.get_index() + 1))
             create_measure(xml_measure, part, measure)
     # =============== END OF PART SCOPE =============

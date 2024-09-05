@@ -1,27 +1,24 @@
 from __future__ import annotations
 from sortedcontainers import SortedDict
+from fractions import Fraction
 from .collection import ContinuousRangeMap, DiscontinuousRangeMap
-from .abstract import Range
 
 import typing as t
 if t.TYPE_CHECKING:
     from typing import Iterator, Iterable, Optional
-    from fractions import Fraction
     from .part import Part
     from .event import Event
     from .abstract import ChordRest
     from .enums import Ottavation
     from .context import Clef, KeySignature, TimeSignature
     from .octave_shift import OctaveShift
-    from .measure import Measure
 
 
-class Staff(Range):
+class Staff():
     def __init__(self):
         self._part = None
         self._id = None
         self._events = SortedDict()
-        self._measures = ContinuousRangeMap()
         self._clefs = ContinuousRangeMap()
         self._key_signatures = ContinuousRangeMap()
         self._time_signatures = ContinuousRangeMap()
@@ -64,15 +61,6 @@ class Staff(Range):
         """ 
         for event in self.get_events(start, end, borders, reverse):
             yield event._chord_rests.values()
-
-    def get_measure(self, time: Fraction) -> Measure:
-        return self._measures[time]
-    
-    def get_measures(self) -> Iterable[Measure]:
-        return self._measures.values()
-    
-    def get_measure_by_index(self, idx: int) -> Measure:
-        return self._measures.values()[idx]
     
     def get_clef(self, time: Fraction) -> Clef:
         return self._clefs[time]
@@ -95,11 +83,6 @@ class Staff(Range):
     def get_ottavation(self, time: Fraction) -> Ottavation:
         range = self._octave_shifts[time]
         return None if range is None else range._ottavation
-    
-    def insert_measure(self, onset: Fraction, measure: Measure):
-        self._measures[onset] = measure
-        measure._staff = self
-        measure._onset = onset
 
     def insert_clef(self, onset: Fraction, clef: Clef):
         self._clefs[onset] = clef
@@ -112,13 +95,3 @@ class Staff(Range):
 
     def insert_octave_shift(self, octave_shift: OctaveShift):
         self._octave_shifts[octave_shift._onset] = octave_shift
-
-    def get_onset(self) -> Fraction:
-        if len(self._events) == 0:
-            return Fraction(0, 1)
-        self._events[0]._onset
-
-    def get_offset(self) -> Fraction:
-        if len(self._events) == 0:
-            return Fraction(0, 1)
-        return self._events.values()[-1].get_offset()

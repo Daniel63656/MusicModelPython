@@ -358,9 +358,8 @@ def import_xml(filepath) -> Score:
             nonlocal cursor
             nonlocal longest_voice_offset
             rep_start, rep_end = False, False
-            measure = Measure()
-            measure._onset = cursor
-            
+            measure_onset = cursor
+            # loop over elements
             for elem in root:
                 if elem.tag == "attributes":
                     process_attributes(elem)
@@ -384,9 +383,8 @@ def import_xml(filepath) -> Score:
             longest_voice_offset = max(longest_voice_offset, cursor)
             cursor = longest_voice_offset
             longest_voice_offset = Fraction(0, 1)
-            # distribute measure copies over staffs
-            for staff in part._staffs.values():
-                staff.insert_measure(measure._onset, Measure(rep_start, rep_end))
+            # create measure object
+            part.insert_measure(measure_onset, Measure(rep_start, rep_end))
 
         # end of subfunction declarations
         for elem in root:

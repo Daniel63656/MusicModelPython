@@ -6,30 +6,23 @@ import typing as t
 if t.TYPE_CHECKING:
     from . import Self
     from typing import Iterable, Optional
-    from .staff import Staff
-    from .event import Event
+    from .part import Part
     from .chord import ChordRest
-    from .context import TimeSignature
 
 
 class Measure(NavigableRange):
     def __init__(self, repetition_start=False, repetition_end=False):
-        self._staff = None
+        self._part = None
         self._onset = None
         self._repetition_start = repetition_start
         self._repetition_end = repetition_end
 
-    def get_staff(self) -> Staff:
-        return self._staff
-    
-    def get_time_signature(self) -> TimeSignature:
-        return self._staff.get_time_signature(self._onset)
-
-    def get_events(self) -> Iterable[Event]:
-        return self._staff.get_events(start=self._onset, end=self.get_offset(), inclusive=(True, False))
+    def get_part(self) -> Part:
+        return self._part
     
     def get_chords_and_rests(self) -> Iterable[ChordRest]:
-        return self._staff.get_chords(start=self._onset, end=self.get_offset(), inclusive=(True, False))
+        for staff in self._part._staffs.values():
+            yield from staff.get_chords(start=self._onset, end=self.get_offset(), inclusive=(True, False))
 
     def get_onset(self) -> Fraction:
         return self._onset
@@ -38,19 +31,23 @@ class Measure(NavigableRange):
         next_measure = self.next()
         if next_measure is not None:
             return next_measure.get_onset()
-        return self._staff.get_offset()
+        # last measure, get length by checking all staffs of part
+        return max(
+            (staff._events.values()[-1].get_offset() for staff in self._part._staffs.values()),
+            default=Fraction(0, 1)
+        )
     
     def next(self) -> Optional[Self]:
-        idx = self._staff._measures.bisect_right(self.get_onset())
-        if idx >= len(self._staff._measures):
+        idx = self._part._measures.bisect_right(self.get_onset())
+        if idx >= len(self._part._measures):
             return None
-        return self._staff._measures.values()[idx]
+        return self._part._measures.values()[idx]
     
     def previous(self) -> Optional[Self]:
-        idx = self._staff._measures.bisect_left(self.get_onset())
+        idx = self._part._measures.bisect_left(self.get_onset())
         if idx < 0:
             return None
-        return self._staff._measures.values()[idx]
+        return self._part._measures.values()[idx]
 
     def get_index(self) -> int:
-        return self._staff._measures.bisect_right(self.get_onset()) - 1
+        return self._part._measures.bisect_right(self.get_onset()) - 1
