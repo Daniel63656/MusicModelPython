@@ -223,3 +223,14 @@ class Ottavation(Enum):
 class Stem(Enum):
     UP = 1
     DOWN = 0
+
+
+class Ornament(Enum):
+    ACCENT = 0
+    MARCATO = 1
+    STACCATO = 2
+    STACCATISSIMO = 3
+    TENUTO = 4
+    ARPEGGIO = 5
+    TRIL = 6
+    MORDENT = 7

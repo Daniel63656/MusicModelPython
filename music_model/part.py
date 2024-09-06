@@ -9,6 +9,7 @@ if t.TYPE_CHECKING:
     from fractions import Fraction
     from .score import Score
     from .measure import Measure
+    from .abstract import ChordRest
 
 
 class Part():
@@ -46,6 +47,10 @@ class Part():
     
     def get_measure_by_index(self, idx: int) -> Measure:
         return self._measures.values()[idx]
+    
+    def get_chords_and_rests(self) -> Iterable[ChordRest]:
+        for staff in self._part._staffs.values():
+            yield from staff.get_chords_and_rests(start=self._onset, end=self.get_offset(), inclusive=(True, False))
 
     def insert_staff(self, id: int, staff: Staff):
         self._staffs[id] = staff

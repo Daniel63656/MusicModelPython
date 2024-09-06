@@ -172,6 +172,7 @@ def import_xml(filepath) -> Score:
             beam_info = None
             time_mod = None     # [normal_notes, normal_type, normal_dots, actual_notes]
             num_tuplet_ends = 0
+            ornaments = []
 
             for elem in root:
                 if elem.tag == "grace":
@@ -238,12 +239,31 @@ def import_xml(filepath) -> Score:
                                 voice_stacks[voice_id].append(tuplet)
                             elif child.attrib.get("type") == "stop":
                                 num_tuplet_ends += 1    # delay tuplet removal from stack after note has gotten correct site
+                        elif child.tag == "arpeggiate":
+                            ornaments.append(Ornament.ARPEGGIO)
+                        elif child.tag == "ornaments":
+                            for c in child:
+                                if c.tag == "trill-mark":
+                                    ornaments.append(Ornament.TRIL)
+                                elif c.tag == "mordent":
+                                    ornaments.append(Ornament.MORDENT)
+                        elif child.tag == "articulations":
+                            for c in child:
+                                if c.tag == "accent":
+                                    ornaments.append(Ornament.ACCENT)
+                                elif c.tag == "strong-accent":
+                                    ornaments.append(Ornament.MARCATO)
+                                elif c.tag == "staccato":
+                                    ornaments.append(Ornament.STACCATO)
+                                elif c.tag == "staccatissimo":
+                                    ornaments.append(Ornament.STACCATISSIMO)
+                                elif c.tag == "tenuto":
+                                    ornaments.append(Ornament.TENUTO)
                 elif elem.tag == "tie":
                     if elem.attrib.get("type") == "stop":
                         tie_stop = True
                     elif elem.attrib.get("type") == "start":
                         tie_start = True
-
             # finally process all the info and create the element
             if not is_chord:
                 current_onset = cursor
@@ -256,6 +276,7 @@ def import_xml(filepath) -> Score:
                     grace_chord.add_note(note)
                 else:
                     grace_chord = GraceChord(note_type, dots, stem)
+                    grace_chord._ornaments = ornaments
                     note = Note(note_name, octave, pitch, accidental)
                     tie_if_needed(note, tie_start, tie_stop)
                     grace_chord.add_note(note)
@@ -289,6 +310,7 @@ def import_xml(filepath) -> Score:
                             note = Note(note_name, octave, pitch, accidental)
                             tie_if_needed(note, tie_start, tie_stop)
                             chord_rest = site.insert_note(current_onset, note, staff, note_type, dots, stem)
+                            chord_rest._ornaments = ornaments
                             # append potential grace chords with beams (can occur within normal beam)
                             for grace_info in grace_chords:
                                 chord_rest.add_grace_chord(grace_info[0])

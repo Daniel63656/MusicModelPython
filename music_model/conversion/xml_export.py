@@ -113,7 +113,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 ET.SubElement(xml_time_mod, "normal-notes").text = str(time_mod.numerator)
                 # TODO when to add normal-type and normal-dot here?
 
-        def create_tuplet_if_necessary(xml_note, chord_rest):
+        def create_tuplet_if_necessary(xml_notations, chord_rest):
             tuplets = []
             site = chord_rest._site
             while isinstance(site, Tuplet):
@@ -124,7 +124,6 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 tuplet = tuplets[-1-i]  # reverse access tuplets
                 # tuplet start
                 if tuplet.get_first_chord_or_rest() is chord_rest:
-                    xml_notations = ET.SubElement(xml_note, "notations")
                     xml_tuplet = ET.SubElement(xml_notations, "tuplet", type="start")
                     xml_tuplet.set("number", str(i+1))
                     # TODO get this from beam if beam exists with same elements instead of 'yes'
@@ -142,7 +141,6 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                             ET.SubElement(xml_normal, "tuplet-dot")
                 # tuplet end
                 elif tuplet.get_last_chord_or_rest() is chord_rest:
-                    xml_notations = ET.SubElement(xml_note, "notations")
                     xml_tuplet = ET.SubElement(xml_notations, "tuplet", type="stop")
                     xml_tuplet.set("number", str(i+1))
 
@@ -187,7 +185,12 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     ET.SubElement(xml_note, "dot")
                 create_time_modification_if_necessary(xml_note, rest)
             ET.SubElement(xml_note, "staff").text = str(rest.get_staff()._id + 1)
-            create_tuplet_if_necessary(xml_note, rest)
+            # tuplet
+            xml_notations = ET.Element("notations")
+            create_tuplet_if_necessary(xml_notations, rest)
+            if len(xml_notations) > 0:
+                xml_note.append(xml_notations)
+            
 
         def create_chord(xml_measure, chord, grace = False):
             create_beam_info_if_necessary(chord)
@@ -225,14 +228,40 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     if chord in beam_info:
                         for i, state in enumerate(beam_info[chord]):
                             ET.SubElement(xml_note, 'beam', number=str(i+1)).text = state
-                    if not grace:
-                        create_tuplet_if_necessary(xml_note, note._chord)
+                xml_notations = ET.Element("notations")
                 if note._next_tied:
-                    xml_tied = ET.SubElement(xml_note, "notations")
-                    ET.SubElement(xml_tied, "tied", type="start")
+                    ET.SubElement(xml_notations, "tied", type="start")
                 if note._previous_tied:
-                    xml_tied = ET.SubElement(xml_note, "notations")
-                    ET.SubElement(xml_tied, "tied", type="stop")
+                    ET.SubElement(xml_notations, "tied", type="stop")
+                if i == 0:
+                    if not grace:
+                        create_tuplet_if_necessary(xml_notations, note._chord)
+                    if len(chord._ornaments) > 0:
+                        xml_ornaments = ET.Element("ornaments")
+                        xml_articulations = ET.Element("articulations")
+                        if Ornament.ARPEGGIO in chord._ornaments:
+                            ET.SubElement(xml_notations, "arpeggiate")
+                        if Ornament.MORDENT in chord._ornaments:
+                            ET.SubElement(xml_ornaments, "mordent")
+                        if Ornament.TRIL in chord._ornaments:
+                            ET.SubElement(xml_ornaments, "trill-mark")
+                        if Ornament.ACCENT in chord._ornaments:
+                            ET.SubElement(xml_articulations, "accent")
+                        if Ornament.MARCATO in chord._ornaments:
+                            ET.SubElement(xml_articulations, "strong-accent")
+                        if Ornament.STACCATO in chord._ornaments:
+                            ET.SubElement(xml_articulations, "staccato")
+                        if Ornament.TENUTO in chord._ornaments:
+                            ET.SubElement(xml_articulations, "tenuto")
+                        if Ornament.STACCATISSIMO in chord._ornaments:
+                            ET.SubElement(xml_articulations, "staccatissimo")
+                        if len(xml_ornaments) > 0:
+                            xml_notations.append(xml_ornaments)
+                        if len(xml_articulations) > 0:
+                            xml_notations.append(xml_articulations)
+                if len(xml_notations) > 0:
+                    xml_note.append(xml_notations)
+
 
         def create_attributes_if_necessary(xml_measure, staff, onset):
             nonlocal first_attributes_in_score
@@ -371,7 +400,8 @@ def show_xml(score: Score):
 
 
 def show(score: Score, dpi: int = 100, margin_in_px: int = 0):
-    xml_content = _parse_to_xml(score)
+    # for reasons only god knows, if there is no line break after <mordent/>, MuseScore import will not work from that point on -> use pretty
+    xml_content = _parse_to_xml(score, pretty=True)
     # get the system's temp directory
     with tempfile.TemporaryDirectory() as temp:
         # create a temporary file for the XML content

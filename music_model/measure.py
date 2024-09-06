@@ -14,6 +14,7 @@ class Measure(NavigableRange):
     def __init__(self, repetition_start=False, repetition_end=False):
         self._part = None
         self._onset = None
+        # TODO implement this in score and remove
         self._repetition_start = repetition_start
         self._repetition_end = repetition_end
 
@@ -22,7 +23,7 @@ class Measure(NavigableRange):
     
     def get_chords_and_rests(self) -> Iterable[ChordRest]:
         for staff in self._part._staffs.values():
-            yield from staff.get_chords(start=self._onset, end=self.get_offset(), inclusive=(True, False))
+            yield from staff.get_chords_and_rests(start=self._onset, end=self.get_offset(), inclusive=(True, False))
 
     def get_onset(self) -> Fraction:
         return self._onset
