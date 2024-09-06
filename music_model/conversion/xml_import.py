@@ -244,7 +244,7 @@ def import_xml(filepath) -> Score:
                         elif child.tag == "ornaments":
                             for c in child:
                                 if c.tag == "trill-mark":
-                                    ornaments.append(Ornament.TRIL)
+                                    ornaments.append(Ornament.TRILL)
                                 elif c.tag == "mordent":
                                     ornaments.append(Ornament.MORDENT)
                         elif child.tag == "articulations":

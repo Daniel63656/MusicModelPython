@@ -243,7 +243,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                             ET.SubElement(xml_notations, "arpeggiate")
                         if Ornament.MORDENT in chord._ornaments:
                             ET.SubElement(xml_ornaments, "mordent")
-                        if Ornament.TRIL in chord._ornaments:
+                        if Ornament.TRILL in chord._ornaments:
                             ET.SubElement(xml_ornaments, "trill-mark")
                         if Ornament.ACCENT in chord._ornaments:
                             ET.SubElement(xml_articulations, "accent")

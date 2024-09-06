@@ -232,5 +232,5 @@ class Ornament(Enum):
     STACCATISSIMO = 3
     TENUTO = 4
     ARPEGGIO = 5
-    TRIL = 6
+    TRILL = 6
     MORDENT = 7
