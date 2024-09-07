@@ -7,51 +7,18 @@ from . import Self
 
 class Accidental(Enum):
     SHARP = 1
-    SHARP_UP = 1
-    SHARP_DOWN = 1
-    SLASH_SHARP = 1
     DOUBLE_SHARP = 2
-    DOUBLE_SHARP_DOWN = 2
-    DOUBLE_SHARP_UP = 2
-    SHARP_SHARP = 2
-    TRIPLE_SHARP = 3
     FLAT = -1
-    FLAT_UP = -1
-    FLAT_DOWN = -1
-    SLASH_FLAT = -1
     FLAT_FLAT = -2
-    FLAT_FLAT_DOWN = -2
-    FLAT_FLAT_UP = -2
-    DOUBLE_SLASH_FLAT = -2
-    TRIPLE_FLAT = -3
     NATURAL = 0
-    NATURAL_UP = 0
-    NATURAL_DOWN = 0
-    NATURAL_FLAT = 0
-    NATURAL_SHARP = 0
-    DOUBLE_NATURAL = 0
-    KORON = 0
-    OTHER = 0
-    SORI = 0
-    NONE = 0
+    # ALIASES from older notation, default to main types when instantiated
+    SHARP_SHARP = 2     ##
+    NATURAL_FLAT = -1
+    NATURAL_SHARP = 1
+    NATURAL_NATURAL = 0
 
     def get_alter(self):
         return self.value
-
-    @staticmethod
-    def from_index(idx):
-        if idx == 2:
-            return Accidental.DOUBLE_SHARP
-        elif idx == 1:
-            return Accidental.SHARP
-        elif idx == 0:
-            return Accidental.NATURAL
-        elif idx == -1:
-            return Accidental.FLAT
-        elif idx == -2:
-            return Accidental.FLAT_FLAT
-        else:
-            return Accidental.NONE
         
 
 class NoteName(Enum):

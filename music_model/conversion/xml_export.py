@@ -237,8 +237,6 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     if len(chord._ornaments) > 0:
                         xml_ornaments = ET.Element("ornaments")
                         xml_articulations = ET.Element("articulations")
-                        if Ornament.ARPEGGIO in chord._ornaments:
-                            ET.SubElement(xml_notations, "arpeggiate")
                         if Ornament.MORDENT in chord._ornaments:
                             ET.SubElement(xml_ornaments, "mordent")
                         if Ornament.TRILL in chord._ornaments:
@@ -257,6 +255,11 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                             xml_notations.append(xml_ornaments)
                         if len(xml_articulations) > 0:
                             xml_notations.append(xml_articulations)
+                    if not grace:
+                        if chord._event._fermata:
+                            ET.SubElement(xml_notations, "fermata")
+                        if Ornament.ARPEGGIO in chord._ornaments:
+                            ET.SubElement(xml_notations, "arpeggiate")
                 if len(xml_notations) > 0:
                     xml_note.append(xml_notations)
 

@@ -20,6 +20,7 @@ class Event(NavigableRange):
         self._staff = staff
         self._onset = onset
         self._chord_rests = {}  # mapped with Voice as key
+        self._fermata = False
 
     def get_chords_and_rests(self) -> Iterable[ChordRest]:
         return self._chord_rests.values()
@@ -29,6 +30,15 @@ class Event(NavigableRange):
     
     def get_measure(self) -> Measure:
         return self._staff.get_measure(self._onset)
+    
+    def get_chords_and_rests(self) -> Iterable[ChordRest]:
+        return self._chord_rests.values()
+    
+    def has_fermata(self) -> bool:
+        return self._fermata
+    
+    def add_fermata(self):
+        self._fermata = True
     
     def get_onset(self) -> Fraction:
         return self._onset

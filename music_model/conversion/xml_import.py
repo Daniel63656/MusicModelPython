@@ -7,7 +7,10 @@ accidental_by_common_name = {
     "flat": Accidental.FLAT,
     "natural": Accidental.NATURAL,
     "double-sharp": Accidental.DOUBLE_SHARP,
-    "flat-flat": Accidental.FLAT_FLAT
+    "flat-flat": Accidental.FLAT_FLAT,
+    "sharp-sharp": Accidental.SHARP_SHARP,
+    "natural-sharp": Accidental.NATURAL_SHARP,
+    "natural-flat": Accidental.NATURAL_FLAT
 }
 
 
@@ -173,6 +176,7 @@ def import_xml(filepath) -> Score:
             time_mod = None     # [normal_notes, normal_type, normal_dots, actual_notes]
             num_tuplet_ends = 0
             ornaments = []
+            has_fermata = False
 
             for elem in root:
                 if elem.tag == "grace":
@@ -259,6 +263,9 @@ def import_xml(filepath) -> Score:
                                     ornaments.append(Ornament.STACCATISSIMO)
                                 elif c.tag == "tenuto":
                                     ornaments.append(Ornament.TENUTO)
+                        #TODO dynamics here also possible!
+                        elif child.tag == "fermata":
+                            has_fermata = True
                 elif elem.tag == "tie":
                     if elem.attrib.get("type") == "stop":
                         tie_stop = True
@@ -311,6 +318,8 @@ def import_xml(filepath) -> Score:
                             tie_if_needed(note, tie_start, tie_stop)
                             chord_rest = site.insert_note(current_onset, note, staff, note_type, dots, stem)
                             chord_rest._ornaments = ornaments
+                            if has_fermata:
+                                chord_rest._event._fermata = True
                             # append potential grace chords with beams (can occur within normal beam)
                             for grace_info in grace_chords:
                                 chord_rest.add_grace_chord(grace_info[0])
