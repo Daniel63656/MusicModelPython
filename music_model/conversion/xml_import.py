@@ -24,7 +24,7 @@ def import_xml(filepath) -> Score:
         active_beams = {}   # <voice-id, Beam> (non grace beams (grace beams can occur within normal beams))
         grace_beam = None
         grace_chords = []   # save grace chords with beam_info and voice-id until their chord is specified
-        octave_shifts = {}  # <Staff, (onset: Fraction, Ottavation)>
+        octave_shifts = {}  # <Staff, (onset: Fraction, Octavation)>
         # cache <onset, signature> to apply signature without number at the end when all staffs defined
         key_signatures = {}
         time_signatures = {}
@@ -350,31 +350,41 @@ def import_xml(filepath) -> Score:
                 elif elem.tag == "clef":
                     process_clef(elem)
 
-        def process_possible_octave_shift(root):
-            start = True
+        def process_direction(root):
             staff = None
-            contains_ocate_shift = False
-            ottavation = None
-            for elem in root.iter():
-                if elem.tag == "octave-shift":
-                    contains_ocate_shift = True
-                    # musicxml means visual shift not pitch shift, so "up is down"
-                    if elem.attrib.get("type") == "up":     # this is ottava bassa (shift notes up visually)
-                        ottavation = Ottavation(-(int(elem.attrib.get("size")) // 7))
-                    elif elem.attrib.get("type") == "down": # this is ottava alta (shift notes down visually)
-                        ottavation = Ottavation(int(elem.attrib.get("size")) // 7)
-                    elif elem.attrib.get("type") == "stop":
-                        start = False
+            octavation = None
+            octavation_start = None
+            dynamics = None
+            # extract information
+            for elem in root:
+                if elem.tag == "direction-type":
+                    for child in elem:
+                        if child.tag == "octave-shift":
+                            octavation_start = True
+                            # musicxml means visual shift not pitch shift, so 'up is down'
+                            if child.attrib.get("type") == "up":     # this is 'bassa' (shift notes up visually)
+                                octavation = Octavation(-(int(child.attrib.get("size")) // 7))
+                            elif child.attrib.get("type") == "down": # this is 'alta' (shift notes down visually)
+                                octavation = Octavation(int(child.attrib.get("size")) // 7)
+                            elif child.attrib.get("type") == "stop":
+                                octavation_start = False
+                        elif child.tag == "dynamics":
+                            # musicXML allows several dynamics. For now, last rules
+                            for dynamic in child:
+                                dynamics = dynamic.tag
                 elif elem.tag == "staff":
                     staff = part._staffs[int(elem.text) - 1]
-            if contains_ocate_shift:
-                if start:
-                    octave_shifts[staff] = (cursor, ottavation)
+            # parse collected information
+            if octavation_start is not None:
+                if octavation_start:
+                    octave_shifts[staff] = (cursor, octavation)
                 else:
                     assert octave_shifts[staff], "Found octave shift without a start."
-                    onset, ottavation = octave_shifts[staff]
-                    octave_shift = OctaveShift(staff, onset, current_onset, ottavation)
+                    onset, octavation = octave_shifts[staff]
+                    octave_shift = OctaveShift(staff, onset, current_onset, octavation)
                     staff.insert_octave_shift(octave_shift)
+            if dynamics is not None:
+                staff._dynamics[cursor] = Dynamics(dynamics)
         
         def process_measure(root):
             nonlocal cursor
@@ -393,7 +403,7 @@ def import_xml(filepath) -> Score:
                 elif elem.tag == "forward":
                     cursor += Fraction(int(elem[0].text), divisions_per_quarter_note * 4)
                 elif elem.tag == "direction":
-                    process_possible_octave_shift(elem)
+                    process_direction(elem)
                 elif elem.tag == "barline":
                     for e in elem:
                         if e.tag == "repeat":

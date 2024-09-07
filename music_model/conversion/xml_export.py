@@ -63,10 +63,9 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
     
     # =============== BEGIN OF PART SCOPE =============
     def create_part(xml_part, part: Part):
-        # keep track to do these only once
-        created_contexts = set()
-        created_octave_shifts = set()
-        closed_octave_shifts = set()
+        # keep track of handled (Staff, Fraction) combinations
+        handled_staff_attributes = set()
+        handled_staff_directions = set()
         beam_info = {}  # map ChorRests to list of beam info once start of BeamGroup is encountered
 
         def create_backup(xml_measure, duration):
@@ -77,12 +76,12 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
             forward = ET.SubElement(xml_measure, "forward")
             ET.SubElement(forward, "duration").text = str(to_division(duration))
 
-        def create_key(xml_attributes, key_signature):
-            xml_key = ET.SubElement(xml_attributes, "key")
+        def create_key(xml_attributes, key_signature, number):
+            xml_key = ET.SubElement(xml_attributes, "key", number=str(number))
             ET.SubElement(xml_key, "fifths").text = str(key_signature._fifths)
 
-        def create_time(xml_attributes, time_signature):
-            xml_time = ET.SubElement(xml_attributes, "time")
+        def create_time(xml_attributes, time_signature, number):
+            xml_time = ET.SubElement(xml_attributes, "time", number=str(number))
             if (time_signature._symbolic):
                 if time_signature._numerator == 4:
                     xml_time.set("symbol", "common")
@@ -146,7 +145,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
 
         def create_beam_info_if_necessary(chord_rest):
             beam_group = chord_rest.get_beam_group()
-            if beam_group is not None and beam_group.get_chords_and_rests()[0] == chord_rest:
+            if beam_group and beam_group.get_chords_and_rests()[0] == chord_rest:
                 chord_rests = beam_group.get_chords_and_rests()
                 numbers = [-chord_rest._note_type.base2_exponent - 2 for chord_rest in chord_rests]
                 for i, number in enumerate(numbers):
@@ -190,7 +189,6 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
             create_tuplet_if_necessary(xml_notations, rest)
             if len(xml_notations) > 0:
                 xml_note.append(xml_notations)
-            
 
         def create_chord(xml_measure, chord, grace = False):
             create_beam_info_if_necessary(chord)
@@ -217,7 +215,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 ET.SubElement(xml_note, "type").text = note._chord._note_type.common_name
                 for _ in range(note._chord._dots):
                     ET.SubElement(xml_note, "dot")
-                if note._accidental is not None:
+                if note._accidental:
                     ET.SubElement(xml_note, "accidental").text = to_accidental_text[note._accidental]
                 if not grace:
                     create_time_modification_if_necessary(xml_note, note._chord)
@@ -262,67 +260,41 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 if len(xml_notations) > 0:
                     xml_note.append(xml_notations)
 
-
-        def create_attributes_if_necessary(xml_measure, staff, onset):
+        def create_attributes_if_necessary(xml_attributes, staff, onset):
             nonlocal first_attributes_in_score
-            # Create xml_attributes element but don't add to xml_measure directly
-            xml_attributes = ET.Element("attributes")
             if first_attributes_in_score:
                 ET.SubElement(xml_attributes, "divisions").text = str(division)
             # do key signature
             key = staff._key_signatures.get(onset)  # None if no key exists at that onset
-            if key and key not in created_contexts:
-                create_key(xml_attributes, key)
-                created_contexts.add(key)
+            if key:
+                create_key(xml_attributes, key, staff._id + 1)
             # do time signature
             time = staff._time_signatures.get(onset)  # None if no time exists at that onset
-            if time and time not in created_contexts:
-                create_time(xml_attributes, time)
-                created_contexts.add(time)
+            if time:
+                create_time(xml_attributes, time, staff._id + 1)
             # aff number of staffs if first attributes in score
             if first_attributes_in_score:
                 ET.SubElement(xml_attributes, "staves").text = str(len(part._staffs))
             # do clefs
             clef = staff._clefs.get(onset)  # None if no clef exists at that onset
-            if clef and clef not in created_contexts:
+            if clef:
                 create_clef(xml_attributes, clef, staff._id + 1)
-                created_contexts.add(clef)
-            # finally, append to xml_measure if attributes are not empty
             if len(xml_attributes) > 0:
-                xml_measure.append(xml_attributes)
                 first_attributes_in_score = False
-
-        def create_octave_shift_start_if_necessary(xml_measure, staff, onset):
-            if staff._octave_shifts.get(onset):
-                octave_shift = staff._octave_shifts.get(onset)
-                # if not already handled
-                if octave_shift in created_octave_shifts:
-                    return
-                shift = octave_shift._ottavation.value
-                xml_direction = ET.SubElement(xml_measure, "direction", placement="above" if shift > 0 else "below")
-                xml_dir_type = ET.SubElement(xml_direction, "direction-type")
-                ET.SubElement(xml_dir_type, "octave-shift", type="down" if shift > 0 else "up", size=str(abs(shift*7) + 1), number="1")
-                ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
-                created_octave_shifts.add(octave_shift)
-
-        def create_octave_shift_end_if_necessary(xml_measure, staff, onset):
-            octave_shift = staff._octave_shifts[onset]
-            if octave_shift and octave_shift.get_offset() == onset:
-                # if not already handled
-                if octave_shift in closed_octave_shifts:
-                    return
-                shift = octave_shift._ottavation.value
-                xml_direction = ET.SubElement(xml_measure, "direction", placement="above" if shift > 0 else "below")     # mayve add placement
-                xml_dir_type = ET.SubElement(xml_direction, "direction-type")
-                ET.SubElement(xml_dir_type, "octave-shift", type="stop", size=str(abs(shift*7) + 1), number="1")
-                ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
-                closed_octave_shifts.add(octave_shift)
 
         def create_measure(xml_measure, part, measure):
             onset = measure._onset
             if measure._repetition_start:
                 xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="forward")
+            # create attributes at start of measure (in grand staff not every staff might have elements at measure start)
+            xml_attributes = ET.Element("attributes")
+            for staff in part._staffs.values():
+                create_attributes_if_necessary(xml_attributes, staff, onset)
+                handled_staff_attributes.add((staff, onset))
+            if len(xml_attributes) > 0:
+                xml_measure.append(xml_attributes)
+            # tokenize, one voice at a time
             for voice in part._voices.values():
                 # backup to measure onset if necessary (from prior voices)
                 if onset > measure._onset:
@@ -334,9 +306,35 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     if onset < chord_rest.get_onset():
                         create_forward(xml_measure, chord_rest.get_onset() - onset)
                         onset = chord_rest.get_onset()
-                    # check if attributes are required for current staff and onset
-                    create_attributes_if_necessary(xml_measure, chord_rest.get_staff(), onset)
-                    create_octave_shift_start_if_necessary(xml_measure, chord_rest.get_staff(), onset)
+                    # get unique (Staff, onset) pair
+                    pair = (chord_rest.get_staff(), onset)
+                    # place attributes if not already handled
+                    if pair not in handled_staff_attributes:
+                        xml_attributes = ET.Element("attributes")
+                        create_attributes_if_necessary(xml_attributes, chord_rest.get_staff(), onset)
+                        if len(xml_attributes) > 0:
+                            xml_measure.append(xml_attributes)
+                    # place pre <note> directions if not already handled
+                    if pair not in handled_staff_directions:
+                        xml_direction_type = ET.Element("direction-type")
+                        staff = pair[0]
+                        onset = pair[1]
+                        # dynamics
+                        dynamics = staff._dynamics.get(onset)
+                        if dynamics:
+                            ET.SubElement(ET.SubElement(xml_direction_type, "dynamics"), dynamics.value)
+                        # octave shift start
+                        octave_shift = staff._octave_shifts.get(onset)
+                        if octave_shift:
+                            octave_shift = octave_shift._octavation.value
+                            ET.SubElement(xml_direction_type, "octave-shift", type="down" if octave_shift > 0 else "up", size=str(abs(octave_shift*7) + 1), number="1")
+                        # place direction if non-empty
+                        if len(xml_direction_type) > 0:
+                            xml_direction = ET.SubElement(xml_measure, "direction")
+                            if octave_shift:    # set direction according to octave-shift if one starts
+                                xml_direction.set("placement", "above" if octave_shift > 0 else "below")
+                            xml_direction.append(xml_direction_type)
+                            ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
                     # create element itself
                     if isinstance(chord_rest, Chord):
                         for grace_chord in chord_rest._grace_chords:
@@ -344,8 +342,25 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                         create_chord(xml_measure, chord_rest)
                     else:
                         create_rest(xml_measure, chord_rest)
-                    create_octave_shift_end_if_necessary(xml_measure, chord_rest.get_staff(), onset)
+                    # place post <note> directions if not already handled
+                    if pair not in handled_staff_directions:
+                        xml_direction_type = ET.Element("direction-type")
+                        staff = pair[0]
+                        onset = pair[1]
+                        # octave shift end
+                        octave_shift = staff._octave_shifts[onset]
+                        if octave_shift and octave_shift.get_offset() == onset:
+                            shift = octave_shift._octavation.value
+                            ET.SubElement(xml_direction_type, "octave-shift", type="stop", size=str(abs(shift*7) + 1), number="1")
+                        # place direction if non-empty
+                        if len(xml_direction_type) > 0:
+                            xml_direction = ET.SubElement(xml_measure, "direction")
+                            xml_direction.append(xml_direction_type)
+                            ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
+                    # increment onset and finalize
                     onset += chord_rest.get_duration()
+                    handled_staff_attributes.add(pair)
+                    handled_staff_directions.add(pair)
             # all voices handled
             # create forward to bar offset if voice ends prematurely
             if onset < measure.get_offset():

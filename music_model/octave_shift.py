@@ -1,6 +1,6 @@
 from __future__ import annotations
 from .abstract import Range
-from .enums import Ottavation
+from .enums import Octavation
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -12,17 +12,17 @@ if t.TYPE_CHECKING:
     
 
 class OctaveShift(Range):
-    def __init__(self, staff: Staff, onset: Fraction, offset: Fraction, ottavation: Ottavation):
+    def __init__(self, staff: Staff, onset: Fraction, offset: Fraction, octavation: Octavation):
         self._staff = staff
         self._onset = onset
         self._offset = offset     # onset of last Event to make independent of last Event's duration
-        self._ottavation = ottavation
+        self._octavation = octavation
 
     def get_staff(self) -> Staff:
         return self._staff
     
-    def get_ottavation(self) -> Ottavation:
-        return self._ottavation
+    def get_octavation(self) -> Octavation:
+        return self._octavation
     
     def get_events(self) -> Iterator[Event]:
         return self._staff.get_events(start=self._onset, end=self._offset, borders=(True, True))

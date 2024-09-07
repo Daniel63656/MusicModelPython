@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
     from .part import Part
     from .event import Event
     from .abstract import ChordRest
-    from .enums import Ottavation
+    from .enums import Octavation, Dynamics
     from .context import Clef, KeySignature, TimeSignature
     from .octave_shift import OctaveShift
 
@@ -23,6 +23,7 @@ class Staff():
         self._key_signatures = ContinuousRangeMap()
         self._time_signatures = ContinuousRangeMap()
         self._octave_shifts = DiscontinuousRangeMap()
+        self._dynamics = ContinuousRangeMap()
 
     def get_part(self) -> Part:
         return self._part
@@ -80,9 +81,15 @@ class Staff():
     def get_time_signatures(self) -> Iterable[tuple[Fraction, TimeSignature]]:
         return self._time_signatures.items()
     
-    def get_ottavation(self, time: Fraction) -> Ottavation:
+    def get_octavation(self, time: Fraction) -> Octavation:
         range = self._octave_shifts[time]
-        return None if range is None else range._ottavation
+        return None if range is None else range._octavation
+    
+    def get_dynamics(self, time: Fraction) -> Dynamics:
+        return self._dynamics[time]
+    
+    def get_all_dynamics(self) -> Iterable[tuple[Fraction, TimeSignature]]:
+        return self._dynamics.items()
 
     def insert_clef(self, onset: Fraction, clef: Clef):
         self._clefs[onset] = clef
@@ -95,3 +102,6 @@ class Staff():
 
     def insert_octave_shift(self, octave_shift: OctaveShift):
         self._octave_shifts[octave_shift._onset] = octave_shift
+
+    def insert_dynamics(self, onset: Fraction, dynamics: Dynamics):
+        self._dynamics[onset] = dynamics

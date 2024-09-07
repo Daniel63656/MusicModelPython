@@ -205,7 +205,7 @@ class NoteType(Enum):
         return self.common_name
 
 
-class Ottavation(Enum):
+class Octavation(Enum):
     O8va = 1
     O8vb = -1
     O15ma = 2
@@ -234,3 +234,14 @@ class Ornament(Enum):
     ARPEGGIO = 5
     TRILL = 6
     MORDENT = 7
+
+
+class Dynamics(Enum):
+    MEZZO_PIANO = "mp"
+    PIANO = "p"
+    PIANISSIMO = "pp"
+    PIANO_PIANISSIMO = "ppp"
+    MEZZO_FORTE = "mf"
+    FORTE = "f"
+    FORTISSIMO = "ff"
+    FORTE_FORTISSIMO = "fff"
