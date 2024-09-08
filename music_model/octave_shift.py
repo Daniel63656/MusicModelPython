@@ -25,7 +25,7 @@ class OctaveShift(Range):
         return self._octavation
     
     def get_events(self) -> Iterator[Event]:
-        return self._staff.get_events(start=self._onset, end=self._offset, borders=(True, True))
+        return self._staff.get_events(start=self._onset, end=self._offset, inclusive=(True, True))
     
     def get_chords_and_rests(self) -> Iterator[ChordRest]:
         return self._staff.get_chords_and_rests(minimum=self._onset, maximum=self._offset, borders=(True, True))

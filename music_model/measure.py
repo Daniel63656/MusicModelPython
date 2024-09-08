@@ -11,16 +11,13 @@ if t.TYPE_CHECKING:
 
 
 class Measure(NavigableRange):
-    def __init__(self, repetition_start=False, repetition_end=False):
+    def __init__(self):
         self._part = None
         self._onset = None
-        # TODO implement this in score and remove
-        self._repetition_start = repetition_start
-        self._repetition_end = repetition_end
 
     def get_part(self) -> Part:
         return self._part
-    
+
     def get_chords_and_rests(self) -> Iterable[ChordRest]:
         for staff in self._part._staffs.values():
             yield from staff.get_chords_and_rests(start=self._onset, end=self.get_offset(), inclusive=(True, False))
@@ -38,13 +35,33 @@ class Measure(NavigableRange):
             if len(staff._events) > 0:
                 max_offset = max(max_offset, staff._events.values()[-1].get_offset())
         return max_offset
-    
+
+    def starts_repeat(self) -> bool:
+        """
+        Returns: True if left barline has repeat symbol
+        """
+        return self._onset in self._part._score._repeat_manager._repeat_starts
+
+    def ends_repeat(self) -> bool:
+        """
+        Returns: True if right barline has repeat symbol
+        """
+        return self.get_offset() in self._part._score._repeat_manager._repeat_ends
+
+    def make_repeat_start(self):
+        self._part._score._repeat_manager._repeat_starts.add(self.onset)
+        self._part._score._repeat_manager.invalidate()
+
+    def make_repeat_end(self):
+        self._part._score._repeat_manager._repeat_ends.add(self.get_offset())
+        self._part._score._repeat_manager.invalidate()
+
     def next(self) -> Optional[Self]:
         idx = self._part._measures.bisect_right(self.get_onset())
         if idx >= len(self._part._measures):
             return None
         return self._part._measures.values()[idx]
-    
+
     def previous(self) -> Optional[Self]:
         idx = self._part._measures.bisect_left(self.get_onset())
         if idx < 0:

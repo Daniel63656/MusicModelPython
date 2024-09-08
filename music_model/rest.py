@@ -9,7 +9,7 @@ if t.TYPE_CHECKING:
 
 
 class Rest(ChordRest):
-    def __init__(self, note_type: NoteType, dots: int, measure_duration: Fraction = None, invisible=False):
+    def __init__(self, note_type: NoteType, dots: int, measure_duration: Fraction = None, invisible=False): # TODO how to handle invisibility
         if measure_duration is None:
             self._nominal_duration = note_type.get_value(dots)
             self._is_measure_rest = False

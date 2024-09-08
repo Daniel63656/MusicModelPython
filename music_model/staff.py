@@ -31,7 +31,7 @@ class Staff():
     def get_id(self) -> int:
         return self._id
     
-    def get_events(self, start: Fraction = None, end: Fraction = None, inclusive=(True, True), reverse: bool = False) -> Iterator[Event]:
+    def get_events(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterator[Event]:
         """ Create an iterator of events between `start` and `end`.
 
             Both `start` and `end` default to `None` which is automatically
@@ -49,7 +49,7 @@ class Staff():
         """
         return self._events[time]
     
-    def get_chords_and_rests(self, start: Fraction = None, end: Fraction = None, borders = (True, False), reverse: bool = False) -> Iterator[ChordRest]:
+    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterator[ChordRest]:
         """ Create an iterator of chords and rests between `start` and `end`.
 
             Both `start` and `end` default to `None` which is automatically
@@ -60,8 +60,8 @@ class Staff():
             respectively. The default is ``(True, True)`` such that the range is
             inclusive of both start and end.)
         """ 
-        for event in self.get_events(start, end, borders, reverse):
-            yield event._chord_rests.values()
+        for event in self.get_events(start, end, inclusive, reverse):
+            yield from event._chord_rests.values()
     
     def get_clef(self, time: Fraction) -> Clef:
         return self._clefs[time]
@@ -87,9 +87,6 @@ class Staff():
     
     def get_dynamics(self, time: Fraction) -> Dynamics:
         return self._dynamics[time]
-    
-    def get_all_dynamics(self) -> Iterable[tuple[Fraction, TimeSignature]]:
-        return self._dynamics.items()
 
     def insert_clef(self, onset: Fraction, clef: Clef):
         self._clefs[onset] = clef

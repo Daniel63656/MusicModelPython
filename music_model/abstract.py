@@ -102,6 +102,7 @@ class ChordRest(Element, ABC):
         super().__init__(note_type, dots)
         self._event = None
         self._beam_group = None
+        self._fermata = False
 
     def get_staff(self) -> Staff:
         return self._event._staff
@@ -111,6 +112,12 @@ class ChordRest(Element, ABC):
     
     def get_beam_group(self) -> BeamGroup:
         return self._beam_group
+    
+    def has_fermata(self) -> bool:
+        return self._fermata
+    
+    def add_fermata(self):
+        self._fermata = True
     
     def get_onset(self) -> Fraction:
         return self._event._onset

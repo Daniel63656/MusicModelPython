@@ -19,6 +19,14 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
         Accidental.DOUBLE_SHARP: "double-sharp",
         Accidental.FLAT_FLAT: "flat-flat"
     }
+    to_repeat_text = {
+        RepeatCommand.DA_CAPO: "D.C.",
+        RepeatCommand.DA_CAPO_AL_FINE: "D.C. al Fine",
+        RepeatCommand.DA_CAPO_AL_CODA: "D.C. al Coda",
+        RepeatCommand.DAL_SEGNO: "D.S.",
+        RepeatCommand.DAL_SEGNO_AL_FINE: "D.S. al Fine",
+        RepeatCommand.DAL_SEGNO_AL_CODA: "D.S. al Coda"
+    }
     first_attributes_in_score = True
 
     def get_export_division(score: Score):
@@ -187,6 +195,8 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
             # tuplet
             xml_notations = ET.Element("notations")
             create_tuplet_if_necessary(xml_notations, rest)
+            if rest._fermata:
+                ET.SubElement(xml_notations, "fermata")
             if len(xml_notations) > 0:
                 xml_note.append(xml_notations)
 
@@ -234,31 +244,31 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 if i == 0:
                     if not grace:
                         create_tuplet_if_necessary(xml_notations, note._chord)
-                    if len(chord._ornaments) > 0:
+                    if len(chord._expressions) > 0:
                         xml_ornaments = ET.Element("ornaments")
                         xml_articulations = ET.Element("articulations")
-                        if Ornament.MORDENT in chord._ornaments:
+                        if Expression.MORDENT in chord._expressions:
                             ET.SubElement(xml_ornaments, "mordent")
-                        if Ornament.TRILL in chord._ornaments:
+                        if Expression.TRILL in chord._expressions:
                             ET.SubElement(xml_ornaments, "trill-mark")
-                        if Ornament.ACCENT in chord._ornaments:
+                        if Expression.ACCENT in chord._expressions:
                             ET.SubElement(xml_articulations, "accent")
-                        if Ornament.MARCATO in chord._ornaments:
+                        if Expression.MARCATO in chord._expressions:
                             ET.SubElement(xml_articulations, "strong-accent")
-                        if Ornament.STACCATO in chord._ornaments:
+                        if Expression.STACCATO in chord._expressions:
                             ET.SubElement(xml_articulations, "staccato")
-                        if Ornament.TENUTO in chord._ornaments:
+                        if Expression.TENUTO in chord._expressions:
                             ET.SubElement(xml_articulations, "tenuto")
-                        if Ornament.STACCATISSIMO in chord._ornaments:
+                        if Expression.STACCATISSIMO in chord._expressions:
                             ET.SubElement(xml_articulations, "staccatissimo")
                         if len(xml_ornaments) > 0:
                             xml_notations.append(xml_ornaments)
                         if len(xml_articulations) > 0:
                             xml_notations.append(xml_articulations)
                     if not grace:
-                        if chord._event._fermata:
+                        if chord._fermata:
                             ET.SubElement(xml_notations, "fermata")
-                        if Ornament.ARPEGGIO in chord._ornaments:
+                        if Expression.ARPEGGIO in chord._expressions:
                             ET.SubElement(xml_notations, "arpeggiate")
                 if len(xml_notations) > 0:
                     xml_note.append(xml_notations)
@@ -287,7 +297,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
 
         def create_measure(xml_measure, part, measure):
             onset = measure._onset
-            if measure._repetition_start:
+            if measure.starts_repeat():
                 xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="forward")
             # create attributes at start of measure (in grand staff not every staff might have elements at measure start)
@@ -322,6 +332,21 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                         xml_direction_type = ET.Element("direction-type")
                         staff = pair[0]
                         onset = pair[1]
+                        # repeat marks and commands
+                        xml_words = ET.Element("words")
+                        repeat_mark = staff._part._score._repeat_manager._repeat_marks.get(onset)
+                        if repeat_mark is not None:
+                            if repeat_mark == RepeatMark.CODA:
+                                ET.SubElement(xml_direction_type, "coda")
+                            elif repeat_mark == RepeatMark.SEGNO:
+                                ET.SubElement(xml_direction_type, "segno")
+                            elif repeat_mark == RepeatMark.FINE:
+                                ET.SubElement(xml_words, "Fine")
+                        repeat_command = staff._part._score._repeat_manager._repeat_commands.get(onset)
+                        if repeat_command is not None:
+                            ET.SubElement(xml_words, to_repeat_text(repeat_command))
+                        if len(xml_words) > 0:
+                            xml_direction_type.append(xml_words)
                         # dynamics
                         dynamics = staff._dynamics.get(onset)
                         if dynamics:
@@ -368,7 +393,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
             # create forward to bar offset if voice ends prematurely
             if onset < measure.get_offset():
                 create_forward(xml_measure, measure.get_offset() - onset)
-            if measure._repetition_end:
+            if measure.ends_repeat():
                 xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="backward")
 

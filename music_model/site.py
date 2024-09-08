@@ -37,7 +37,7 @@ class Site(Range):
         """
         return self._elements[time]
     
-    def get_chords_and_rests(self, start: Fraction = None, end: Fraction = None, inclusive=(True, True), reverse: bool = False) -> Iterator[ChordRest]:
+    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterator[ChordRest]:
         """ Create an iterator of all chords and rests in a flattened view (this site and
             all child sites) between `start` and `end`.
 

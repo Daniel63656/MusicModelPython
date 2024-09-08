@@ -16,9 +16,8 @@ accidental_by_common_name = {
 
 def import_xml(filepath) -> Score:
 
-    def process_part(root):
+    def process_part(root, part):
         # declare outer scope variables
-        part = Part()
         divisions_per_quarter_note = None
         longest_voice_offset, current_onset, cursor = Fraction(0, 1), Fraction(0, 1), Fraction(0, 1)
         pending_notes = []
@@ -175,7 +174,7 @@ def import_xml(filepath) -> Score:
             beam_info = None
             time_mod = None     # [normal_notes, normal_type, normal_dots, actual_notes]
             num_tuplet_ends = 0
-            ornaments = []
+            expressions = []
             has_fermata = False
 
             for elem in root:
@@ -244,26 +243,28 @@ def import_xml(filepath) -> Score:
                             elif child.attrib.get("type") == "stop":
                                 num_tuplet_ends += 1    # delay tuplet removal from stack after note has gotten correct site
                         elif child.tag == "arpeggiate":
-                            ornaments.append(Ornament.ARPEGGIO)
+                            expressions.append(Expression.ARPEGGIO)
                         elif child.tag == "ornaments":
                             for c in child:
                                 if c.tag == "trill-mark":
-                                    ornaments.append(Ornament.TRILL)
+                                    expressions.append(Expression.TRILL)
                                 elif c.tag == "mordent":
-                                    ornaments.append(Ornament.MORDENT)
+                                    expressions.append(Expression.MORDENT)
                         elif child.tag == "articulations":
                             for c in child:
                                 if c.tag == "accent":
-                                    ornaments.append(Ornament.ACCENT)
+                                    expressions.append(Expression.ACCENT)
                                 elif c.tag == "strong-accent":
-                                    ornaments.append(Ornament.MARCATO)
+                                    expressions.append(Expression.MARCATO)
                                 elif c.tag == "staccato":
-                                    ornaments.append(Ornament.STACCATO)
+                                    expressions.append(Expression.STACCATO)
                                 elif c.tag == "staccatissimo":
-                                    ornaments.append(Ornament.STACCATISSIMO)
+                                    expressions.append(Expression.STACCATISSIMO)
                                 elif c.tag == "tenuto":
-                                    ornaments.append(Ornament.TENUTO)
-                        #TODO dynamics here also possible!
+                                    expressions.append(Expression.TENUTO)
+                        elif child.tag == "dynamics":
+                            for dynamic in child:
+                                staff._dynamics[cursor] = Dynamics(dynamic.tag)
                         elif child.tag == "fermata":
                             has_fermata = True
                 elif elem.tag == "tie":
@@ -283,7 +284,7 @@ def import_xml(filepath) -> Score:
                     grace_chord.add_note(note)
                 else:
                     grace_chord = GraceChord(note_type, dots, stem)
-                    grace_chord._ornaments = ornaments
+                    grace_chord._expressions = expressions
                     note = Note(note_name, octave, pitch, accidental)
                     tie_if_needed(note, tie_start, tie_stop)
                     grace_chord.add_note(note)
@@ -293,7 +294,7 @@ def import_xml(filepath) -> Score:
                 if not is_chord:
                     site = voice_stacks[voice_id][-1]
                 if note_type is None:
-                    # standard rest - use XML specified duration and set to standard NoteType (WHOLE)
+                    # measure rest - use XML specified duration and set to standard NoteType (WHOLE)
                     assert is_rest, "Expected measure rest here"
                     site.insert_chord_or_rest(current_onset, Rest(NoteType.WHOLE, 0, measure_duration=duration, invisible=invisible), staff)
                     cursor += duration
@@ -317,7 +318,7 @@ def import_xml(filepath) -> Score:
                             note = Note(note_name, octave, pitch, accidental)
                             tie_if_needed(note, tie_start, tie_stop)
                             chord_rest = site.insert_note(current_onset, note, staff, note_type, dots, stem)
-                            chord_rest._ornaments = ornaments
+                            chord_rest._expressions = expressions
                             if has_fermata:
                                 chord_rest._event._fermata = True
                             # append potential grace chords with beams (can occur within normal beam)
@@ -341,6 +342,9 @@ def import_xml(filepath) -> Score:
                             active_beams[voice_id].add_chord_or_rest(chord_rest)
                         elif beam_info == "end":
                             active_beams.pop(voice_id).add_chord_or_rest(chord_rest)
+                        # chords and rests can have fermata
+                        if has_fermata:
+                            chord_rest._fermata = True
                         # advance cursor
                         cursor += duration
                     # pop tuplet ends from stack (chords will reuse their first note's site)
@@ -381,6 +385,25 @@ def import_xml(filepath) -> Score:
                             # musicXML allows several dynamics. For now, last rules
                             for dynamic in child:
                                 dynamics = dynamic.tag
+                        elif child.tag == "coda":
+                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.CODA
+                        elif child.tag == "segno":
+                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.SEGNO
+                        elif child.tag == "words":
+                            if child.text == "Fine":
+                                part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.FINE
+                            elif child.text == "D.C.":
+                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DA_CAPO
+                            elif child.text == "D.C. al Fine":
+                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DA_CAPO_AL_FINE
+                            elif child.text == "D.C. al Coda":
+                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DA_CAPO_AL_CODA
+                            elif child.text == "D.S.":
+                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DAL_SEGNO
+                            elif child.text == "D.S. al Fine":
+                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DAL_SEGNO_AL_FINE
+                            elif child.text == "D.S. al Coda":
+                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DAL_SEGNO_AL_CODA
                 elif elem.tag == "staff":
                     staff = part._staffs[int(elem.text) - 1]
             # parse collected information
@@ -398,7 +421,6 @@ def import_xml(filepath) -> Score:
         def process_measure(root):
             nonlocal cursor
             nonlocal longest_voice_offset
-            rep_start, rep_end = False, False
             measure_onset = cursor
             # loop over elements
             for elem in root:
@@ -414,18 +436,22 @@ def import_xml(filepath) -> Score:
                 elif elem.tag == "direction":
                     process_direction(elem)
                 elif elem.tag == "barline":
-                    for e in elem:
-                        if e.tag == "repeat":
-                            if e.attrib.get("direction") == "forward":  
-                                rep_start = True
-                            elif e.attrib.get("direction") == "backward":  
-                                rep_end = True
+                    for child in elem:
+                        if child.tag == "repeat":
+                            if child.attrib.get("direction") == "forward": 
+                                part._score._repeat_manager._repeat_starts.add(cursor)
+                            elif child.attrib.get("direction") == "backward":
+                                part._score._repeat_manager._repeat_ends.add(cursor)
+                        elif child.tag == "coda":
+                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.CODA
+                        elif child.tag == "segno":
+                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.SEGNO
             # advance onset to end of measure
             longest_voice_offset = max(longest_voice_offset, cursor)
             cursor = longest_voice_offset
             longest_voice_offset = Fraction(0, 1)
             # create measure object
-            part.insert_measure(measure_onset, Measure(rep_start, rep_end))
+            part.insert_measure(measure_onset, Measure())
 
         # end of subfunction declarations
         for elem in root:
@@ -455,6 +481,8 @@ def import_xml(filepath) -> Score:
         # traverse xml elements only once
         for elem in root:
             if elem.tag == "part":
-                part = process_part(elem)
+                part = Part()
                 score.append_part(part)
+                part = process_part(elem, part)
+            
     return score

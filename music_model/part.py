@@ -16,6 +16,7 @@ class Part():
     def __init__(self):
         self._score = None
         self._idx = None
+        self._instrument = None     #TODO read from xml
         # these will auto-add staffs/voices if querrying a new key
         self._staffs = SafeDict(lambda id: self.insert_staff(id, Staff()))
         self._voices = SafeDict(lambda id: self.insert_voice(id, Voice()))
@@ -48,9 +49,9 @@ class Part():
     def get_measure_by_index(self, idx: int) -> Measure:
         return self._measures.values()[idx]
     
-    def get_chords_and_rests(self) -> Iterable[ChordRest]:
+    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, borders=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterable[ChordRest]:
         for staff in self._part._staffs.values():
-            yield from staff.get_chords_and_rests(start=self._onset, end=self.get_offset(), inclusive=(True, False))
+            yield from staff.get_chords_and_rests(start, end, borders, reverse, use_unfolded_time)
 
     def insert_staff(self, id: int, staff: Staff):
         self._staffs[id] = staff

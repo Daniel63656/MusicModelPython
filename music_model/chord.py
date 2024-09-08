@@ -1,12 +1,13 @@
 from __future__ import annotations
 from .abstract import NavigableRange, ChordRest
-from .enums import NoteType, Stem, Ornament
+from .enums import NoteType, Stem
 
 import typing as t
 if t.TYPE_CHECKING:
     from . import Self
     from typing import Optional, Iterable
     from fractions import Fraction
+    from .enums import Expression
     from .staff import Staff
     from .voice import Voice
     from .measure import Measure
@@ -20,7 +21,7 @@ class Chord(ChordRest):
         if note_type is NoteType.WHOLE and stem is not None:
             raise ValueError("chords with NoteType 'whole' can't have a stem.")
         self._grace_chords = []
-        self._ornaments = set()
+        self._expressions = set()
         self._notes = set()
         self._stem = stem
 
@@ -42,11 +43,11 @@ class Chord(ChordRest):
         grace_chord._chord = self
         grace_chord._idx = len(self._grace_chords)
 
-    def add_ornament(self, ornament: Ornament):
-        self._ornaments.add(ornament)
+    def add_expression(self, expression: Expression):
+        self._expressions.add(expression)
 
-    def get_ornament(self) -> Iterable[Ornament]:
-        return self._ornaments
+    def get_expression(self) -> Iterable[Expression]:
+        return self._expressions
 
     def get_duration(self) -> Fraction:
         duration = self._note_type.get_value(self._dots)
@@ -71,7 +72,7 @@ class GraceChord(NavigableRange):
         self._idx = None
         self._note_type = note_type
         self._dots = dots
-        self._ornaments = set()
+        self._expressions = set()
         self._notes = set()
         self._stem = stem
         self._beam_group = None
@@ -88,11 +89,11 @@ class GraceChord(NavigableRange):
     def get_notes(self) -> Iterable[Note]:
         return self._notes
     
-    def add_ornament(self, ornament: Ornament):
-        self._ornaments.add(ornament)
+    def add_expression(self, expression: Expression):
+        self._expressions.add(expression)
 
-    def get_ornament(self) -> Iterable[Ornament]:
-        return self._ornaments
+    def get_expression(self) -> Iterable[Expression]:
+        return self._expressions
 
     def get_staff(self) -> Staff:
         return self._chord.get_staff()

@@ -1,8 +1,15 @@
 @startuml
 class Score {
 }
+class Repetition {
+Score : score
+Fraction : onset
+Fraction : offset
+Map[Fraction, int] : endings
+}
 class Part {
 Score : score
+int: idx
 Instrument : instrument
 }
 class Staff {
@@ -29,10 +36,10 @@ class OctaveShift {
 Staff : staff
 Fraction : onset
 Fraction : offset
-Ottavation : ottavation
+Octavation : octavation
 }
 class Measure {
-Staff : staff
+Part: part
 Fraction : onset
 }
 interface Site {
@@ -55,8 +62,10 @@ int : dots
 abstract class ChordRest {
 Event : event
 BeamGroup : beam_group
+bool: fermata
 }
 class Chord {
+List[Expression] : expressions
 Stem : stem
 }
 class Rest {
@@ -67,6 +76,7 @@ Chord : chord
 int : index
 NoteType : note_type
 int : dots
+List[Expression] : expressions
 Stem : stem
 BeamGroup : beam_group
 }
@@ -82,6 +92,7 @@ Voice : voice
 
 
 Score "*" *-- Part
+Score "onset" *-- Repetition
 Part "id" *-- Staff
 Part "id" *-- Voice
 Staff "onset" *--Event
@@ -89,7 +100,7 @@ Staff "onset" *--Clef
 Staff "onset" *--KeySignature
 Staff "onset" *--TimeSignature
 Staff "onset" *--OctaveShift
-Staff "onset" *-- Measure
+Part "onset" *-- Measure
 Voice "onset" *-- BeamGroup
 Site <|-- Voice
 Site <|-- Tuplet

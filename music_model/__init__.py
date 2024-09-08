@@ -1,7 +1,8 @@
 # define what should be imported with 'from music_model import *'
 __all__ = [
-    'Accidental', 'ClefType', 'Clef', 'NoteName', 'NoteType', 'Stem', 'Octavation', 'Ornament', 'Dynamics',
+    'Accidental', 'ClefType', 'Clef', 'NoteName', 'NoteType', 'Stem', 'Octavation', 'Expression', 'Dynamics', 'Instrument',
     'Score', 'Part', 'Staff', 'Voice', 'Event', 'Element', 'ChordRest', 'Chord', 'GraceChord', 'Rest', 'Note',
+    'RepeatMark', 'RepeatCommand',
     'OctaveShift', 'KeySignature', 'TimeSignature', 'BeamGroup', 'Tuplet', 'Measure', 'Site', 'Self'
 ]
 
@@ -12,8 +13,9 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self
 
-from .enums import Accidental, NoteName, ClefType, NoteType, Stem, Octavation, Ornament, Dynamics
+from .enums import Accidental, NoteName, ClefType, NoteType, Stem, Octavation, Expression, Dynamics, Instrument
 from .score import Score
+from .repeat import RepeatMark, RepeatCommand
 from .part import Part
 from .site import Site
 from .staff import Staff
