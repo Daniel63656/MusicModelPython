@@ -2,7 +2,7 @@
 __all__ = [
     'Accidental', 'ClefType', 'Clef', 'NoteName', 'NoteType', 'Stem', 'Octavation', 'Expression', 'Dynamics', 'Instrument',
     'Score', 'Part', 'Staff', 'Voice', 'Event', 'Element', 'ChordRest', 'Chord', 'GraceChord', 'Rest', 'Note',
-    'RepeatMark', 'RepeatCommand',
+    'RepeatStart', 'RepeatEnd', 'Ending', 'Coda', 'Segno', 'DaCapo', 'DalSegno', 'ToCoda', 'Fine',
     'OctaveShift', 'KeySignature', 'TimeSignature', 'BeamGroup', 'Tuplet', 'Measure', 'Site', 'Self'
 ]
 
@@ -15,7 +15,7 @@ else:
 
 from .enums import Accidental, NoteName, ClefType, NoteType, Stem, Octavation, Expression, Dynamics, Instrument
 from .score import Score
-from .repeat import RepeatMark, RepeatCommand
+from .repeat import RepeatStart, RepeatEnd, Ending, Coda, Segno, DaCapo, DalSegno, ToCoda, Fine
 from .part import Part
 from .site import Site
 from .staff import Staff

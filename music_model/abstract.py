@@ -36,9 +36,9 @@ class Range(ABC):
         """
         return self.get_onset() <= time < self.get_offset()
 
+    # comparison methods for sorting
     def __gt__(self, other):
         return self.get_onset() > other.get_onset()
-    
     def __lt__(self, other):
         return self.get_onset() < other.get_onset()
     

@@ -6,27 +6,39 @@ import os, math, functools, subprocess, tempfile
 from IPython.display import display, Image
 XML_VERSION = 3.1
 PATH_TO_MUSESCORE_EXE = "C:/Program Files/MuseScore 3/bin/MuseScore3.exe"
+# text mappings
+clefs_with_note_names = {ClefType.TREBLE, ClefType.BASS, ClefType.SOPRANO, ClefType.MEZZO_SOPRANO, ClefType.ALTO, ClefType.TENOR, ClefType.BARITONE}
+accidental_map = {
+    Accidental.SHARP: "sharp",
+    Accidental.FLAT: "flat",
+    Accidental.NATURAL: "natural",
+    Accidental.DOUBLE_SHARP: "double-sharp",
+    Accidental.FLAT_FLAT: "flat-flat"
+}
+ornament_map = {
+    Expression.MORDENT: "mordent",
+    Expression.TRILL: "trill-mark"
+}
+articulation_map = {
+    Expression.ACCENT: "accent",
+    Expression.MARCATO: "strong-accent",
+    Expression.STACCATO: "staccato",
+    Expression.STACCATISSIMO: "staccatissimo",
+    Expression.TENUTO: "tenuto"
+}
+# repeat_command_map = {
+#     RepeatCommand.DA_CAPO: "D.C.",
+#     RepeatCommand.DA_CAPO_AL_FINE: "D.C. al Fine",
+#     RepeatCommand.DA_CAPO_AL_CODA: "D.C. al Coda",
+#     RepeatCommand.DAL_SEGNO: "D.S.",
+#     RepeatCommand.DAL_SEGNO_AL_FINE: "D.S. al Fine",
+#     RepeatCommand.DAL_SEGNO_AL_CODA: "D.S. al Coda"
+# }
 
 
 def _parse_to_xml(score: Score, pretty: bool = False) -> str:
     """ parse to musicXML using 'score-partwise' encoding.
     """
-    clefs_with_note_names = {ClefType.TREBLE, ClefType.BASS, ClefType.SOPRANO, ClefType.MEZZO_SOPRANO, ClefType.ALTO, ClefType.TENOR, ClefType.BARITONE}
-    to_accidental_text = {
-        Accidental.SHARP: "sharp",
-        Accidental.FLAT: "flat",
-        Accidental.NATURAL: "natural",
-        Accidental.DOUBLE_SHARP: "double-sharp",
-        Accidental.FLAT_FLAT: "flat-flat"
-    }
-    to_repeat_text = {
-        RepeatCommand.DA_CAPO: "D.C.",
-        RepeatCommand.DA_CAPO_AL_FINE: "D.C. al Fine",
-        RepeatCommand.DA_CAPO_AL_CODA: "D.C. al Coda",
-        RepeatCommand.DAL_SEGNO: "D.S.",
-        RepeatCommand.DAL_SEGNO_AL_FINE: "D.S. al Fine",
-        RepeatCommand.DAL_SEGNO_AL_CODA: "D.S. al Coda"
-    }
     first_attributes_in_score = True
 
     def get_export_division(score: Score):
@@ -226,7 +238,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 for _ in range(note._chord._dots):
                     ET.SubElement(xml_note, "dot")
                 if note._accidental:
-                    ET.SubElement(xml_note, "accidental").text = to_accidental_text[note._accidental]
+                    ET.SubElement(xml_note, "accidental").text = accidental_map[note._accidental]
                 if not grace:
                     create_time_modification_if_necessary(xml_note, note._chord)
                 if note._chord._stem:
@@ -247,20 +259,11 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     if len(chord._expressions) > 0:
                         xml_ornaments = ET.Element("ornaments")
                         xml_articulations = ET.Element("articulations")
-                        if Expression.MORDENT in chord._expressions:
-                            ET.SubElement(xml_ornaments, "mordent")
-                        if Expression.TRILL in chord._expressions:
-                            ET.SubElement(xml_ornaments, "trill-mark")
-                        if Expression.ACCENT in chord._expressions:
-                            ET.SubElement(xml_articulations, "accent")
-                        if Expression.MARCATO in chord._expressions:
-                            ET.SubElement(xml_articulations, "strong-accent")
-                        if Expression.STACCATO in chord._expressions:
-                            ET.SubElement(xml_articulations, "staccato")
-                        if Expression.TENUTO in chord._expressions:
-                            ET.SubElement(xml_articulations, "tenuto")
-                        if Expression.STACCATISSIMO in chord._expressions:
-                            ET.SubElement(xml_articulations, "staccatissimo")
+                        for expression in chord._expressions:
+                            if expression in ornament_map:
+                                ET.SubElement(xml_ornaments, ornament_map[expression])
+                            elif expression in articulation_map:
+                                ET.SubElement(xml_articulations, articulation_map[expression])
                         if len(xml_ornaments) > 0:
                             xml_notations.append(xml_ornaments)
                         if len(xml_articulations) > 0:
@@ -332,19 +335,17 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                         xml_direction_type = ET.Element("direction-type")
                         staff = pair[0]
                         onset = pair[1]
-                        # repeat marks and commands
+                        # repeat marks and commands     TODO place only once per score
                         xml_words = ET.Element("words")
-                        repeat_mark = staff._part._score._repeat_manager._repeat_marks.get(onset)
-                        if repeat_mark is not None:
-                            if repeat_mark == RepeatMark.CODA:
-                                ET.SubElement(xml_direction_type, "coda")
-                            elif repeat_mark == RepeatMark.SEGNO:
-                                ET.SubElement(xml_direction_type, "segno")
-                            elif repeat_mark == RepeatMark.FINE:
-                                ET.SubElement(xml_words, "Fine")
-                        repeat_command = staff._part._score._repeat_manager._repeat_commands.get(onset)
+                        if onset in staff._part._score._codas is not None:
+                            ET.SubElement(xml_direction_type, "coda")
+                        if onset in staff._part._score._segnos is not None:
+                            ET.SubElement(xml_direction_type, "segno")
+                        if onset in staff._part._score._fines is not None:
+                            ET.SubElement(xml_direction_type, "Fine")
+                        repeat_command = staff._part._score._repeat_commands.get(onset)
                         if repeat_command is not None:
-                            ET.SubElement(xml_words, to_repeat_text(repeat_command))
+                            ET.SubElement(xml_words, str(repeat_command))
                         if len(xml_words) > 0:
                             xml_direction_type.append(xml_words)
                         # dynamics
@@ -443,7 +444,8 @@ def show_xml(score: Score):
 
 
 def show(score: Score, dpi: int = 100, margin_in_px: int = 0):
-    # for reasons only god knows, if there is no line break after <mordent/>, MuseScore import will not work from that point on -> use pretty
+    # for reasons only god knows, if there is no line break after <mordent/>,
+    # MuseScore import will not work from that point on -> use pretty
     xml_content = _parse_to_xml(score, pretty=True)
     # get the system's temp directory
     with tempfile.TemporaryDirectory() as temp:

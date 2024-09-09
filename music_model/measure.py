@@ -40,21 +40,19 @@ class Measure(NavigableRange):
         """
         Returns: True if left barline has repeat symbol
         """
-        return self._onset in self._part._score._repeat_manager._repeat_starts
+        return self._onset in self._part._score._repeat_starts
 
     def ends_repeat(self) -> bool:
         """
         Returns: True if right barline has repeat symbol
         """
-        return self.get_offset() in self._part._score._repeat_manager._repeat_ends
+        return self.get_offset() in self._part._score._repeat_ends
 
     def make_repeat_start(self):
-        self._part._score._repeat_manager._repeat_starts.add(self.onset)
-        self._part._score._repeat_manager.invalidate()
+        self._part._score._repeat_starts.add(self.onset)
 
     def make_repeat_end(self):
-        self._part._score._repeat_manager._repeat_ends.add(self.get_offset())
-        self._part._score._repeat_manager.invalidate()
+        self._part._score._repeat_ends.add(self.get_offset())
 
     def next(self) -> Optional[Self]:
         idx = self._part._measures.bisect_right(self.get_onset())

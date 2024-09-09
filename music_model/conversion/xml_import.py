@@ -2,7 +2,7 @@ from music_model import *
 from fractions import Fraction
 import os, xml.etree.ElementTree as ET
 from ..collection import SafeDict
-accidental_by_common_name = {
+accidental_by_name = {
     "sharp": Accidental.SHARP,
     "flat": Accidental.FLAT,
     "natural": Accidental.NATURAL,
@@ -11,6 +11,13 @@ accidental_by_common_name = {
     "sharp-sharp": Accidental.SHARP_SHARP,
     "natural-sharp": Accidental.NATURAL_SHARP,
     "natural-flat": Accidental.NATURAL_FLAT
+}
+articulation_by_name = {
+    "accent": Expression.ACCENT,
+    "strong-accent": Expression.MARCATO,
+    "staccato": Expression.STACCATO,
+    "staccatissimo": Expression.STACCATISSIMO,
+    "tenuto": Expression.TENUTO
 }
 
 
@@ -197,7 +204,7 @@ def import_xml(filepath) -> Score:
                     if elem.attrib.get("number") == "1":
                         beam_info = elem.text
                 elif elem.tag == "accidental":
-                    accidental = accidental_by_common_name[elem.text]
+                    accidental = accidental_by_name[elem.text]
                 elif elem.tag == "stem":
                     text = elem.text
                     if text == "up":
@@ -252,17 +259,10 @@ def import_xml(filepath) -> Score:
                                     expressions.append(Expression.MORDENT)
                         elif child.tag == "articulations":
                             for c in child:
-                                if c.tag == "accent":
-                                    expressions.append(Expression.ACCENT)
-                                elif c.tag == "strong-accent":
-                                    expressions.append(Expression.MARCATO)
-                                elif c.tag == "staccato":
-                                    expressions.append(Expression.STACCATO)
-                                elif c.tag == "staccatissimo":
-                                    expressions.append(Expression.STACCATISSIMO)
-                                elif c.tag == "tenuto":
-                                    expressions.append(Expression.TENUTO)
+                                if c.tag in articulation_by_name:
+                                    expressions.append(articulation_by_name[c.tag])
                         elif child.tag == "dynamics":
+                            # musicXML allows several dynamics. For now, last rules
                             for dynamic in child:
                                 staff._dynamics[cursor] = Dynamics(dynamic.tag)
                         elif child.tag == "fermata":
@@ -386,24 +386,23 @@ def import_xml(filepath) -> Score:
                             for dynamic in child:
                                 dynamics = dynamic.tag
                         elif child.tag == "coda":
-                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.CODA
+                            part._score.insert_repeat_mark(cursor, Coda())
                         elif child.tag == "segno":
-                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.SEGNO
+                            part._score.insert_repeat_mark(cursor, Segno())
                         elif child.tag == "words":
                             if child.text == "Fine":
-                                part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.FINE
-                            elif child.text == "D.C.":
-                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DA_CAPO
-                            elif child.text == "D.C. al Fine":
-                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DA_CAPO_AL_FINE
-                            elif child.text == "D.C. al Coda":
-                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DA_CAPO_AL_CODA
-                            elif child.text == "D.S.":
-                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DAL_SEGNO
-                            elif child.text == "D.S. al Fine":
-                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DAL_SEGNO_AL_FINE
-                            elif child.text == "D.S. al Coda":
-                                part._score._repeat_manager._repeat_commands[cursor] = RepeatCommand.DAL_SEGNO_AL_CODA
+                                part._score.insert_repeat_command(cursor, Fine())
+                            elif child.text == "To Coda":
+                                part._score.insert_repeat_command(cursor, ToCoda)
+                            else:
+                                prefix = child.text[:4]
+                                suffix = ""
+                                if len(child.text) >= 8:
+                                    suffix = child.text[-4:]
+                                if prefix == "D.C":
+                                    part._score.insert_repeat_command(cursor, DaCapo(al=suffix))
+                                elif prefix == "D.S":
+                                    part._score.insert_repeat_command(cursor, DalSegno(al=suffix))
                 elif elem.tag == "staff":
                     staff = part._staffs[int(elem.text) - 1]
             # parse collected information
@@ -439,13 +438,19 @@ def import_xml(filepath) -> Score:
                     for child in elem:
                         if child.tag == "repeat":
                             if child.attrib.get("direction") == "forward": 
-                                part._score._repeat_manager._repeat_starts.add(cursor)
+                                r = RepeatStart()
+                                r._score = part._score
+                                r._onset = cursor
+                                part._score._repeat_starts[cursor] = r
                             elif child.attrib.get("direction") == "backward":
-                                part._score._repeat_manager._repeat_ends.add(cursor)
+                                r = RepeatEnd()
+                                r._score = part._score
+                                r._onset = cursor
+                                part._score._repeat_ends[cursor] = r
                         elif child.tag == "coda":
-                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.CODA
+                            part._score.insert_repeat_mark(cursor, Coda())
                         elif child.tag == "segno":
-                            part._score._repeat_manager._repeat_marks[cursor] = RepeatMark.SEGNO
+                            part._score.insert_repeat_mark(cursor, Segno())
             # advance onset to end of measure
             longest_voice_offset = max(longest_voice_offset, cursor)
             cursor = longest_voice_offset
