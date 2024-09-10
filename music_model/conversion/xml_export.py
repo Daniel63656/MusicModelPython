@@ -300,9 +300,18 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
 
         def create_measure(xml_measure, part, measure):
             onset = measure._onset
+            # place RepeatMarks
             if measure.starts_repeat():
                 xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="forward")
+            xml_direction_type = ET.Element("direction-type")
+            if onset in part._score._codas is not None:
+                ET.SubElement(xml_direction_type, "coda")
+            if onset in part._score._segnos is not None:
+                ET.SubElement(xml_direction_type, "segno")
+            if len(xml_direction_type) > 0:
+                xml_direction = ET.SubElement(xml_measure, "direction")
+                xml_direction.append(xml_direction_type)
             # create attributes at start of measure (in grand staff not every staff might have elements at measure start)
             xml_attributes = ET.Element("attributes")
             for staff in part._staffs.values():
@@ -335,19 +344,6 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                         xml_direction_type = ET.Element("direction-type")
                         staff = pair[0]
                         onset = pair[1]
-                        # repeat marks and commands     TODO place only once per score
-                        xml_words = ET.Element("words")
-                        if onset in staff._part._score._codas is not None:
-                            ET.SubElement(xml_direction_type, "coda")
-                        if onset in staff._part._score._segnos is not None:
-                            ET.SubElement(xml_direction_type, "segno")
-                        if onset in staff._part._score._fines is not None:
-                            ET.SubElement(xml_direction_type, "Fine")
-                        repeat_command = staff._part._score._repeat_commands.get(onset)
-                        if repeat_command is not None:
-                            ET.SubElement(xml_words, str(repeat_command))
-                        if len(xml_words) > 0:
-                            xml_direction_type.append(xml_words)
                         # dynamics
                         dynamics = staff._dynamics.get(onset)
                         if dynamics:
@@ -394,7 +390,19 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
             # create forward to bar offset if voice ends prematurely
             if onset < measure.get_offset():
                 create_forward(xml_measure, measure.get_offset() - onset)
-            if measure.ends_repeat():
+            # place RepeatCommands at end of measure 
+            xml_direction_type = ET.Element("direction-type")
+            repeat_command = part._score._repeat_commands.get(onset)
+            if repeat_command is not None:
+                ET.SubElement(xml_direction_type, "words").text = str(repeat_command)
+            if onset in part._score._to_codas is not None:
+                ET.SubElement(xml_direction_type, "words").text = "To Coda"
+            if onset in part._score._fines is not None:
+                ET.SubElement(xml_direction_type, "words").text = "Fine"
+            if len(xml_direction_type) > 0:
+                xml_direction = ET.SubElement(xml_measure, "direction")
+                xml_direction.append(xml_direction_type)
+            if onset in part._score._repeat_ends:
                 xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="backward")
 

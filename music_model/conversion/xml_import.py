@@ -393,15 +393,15 @@ def import_xml(filepath) -> Score:
                             if child.text == "Fine":
                                 part._score.insert_repeat_command(cursor, Fine())
                             elif child.text == "To Coda":
-                                part._score.insert_repeat_command(cursor, ToCoda)
+                                part._score.insert_repeat_command(cursor, ToCoda())
                             else:
                                 prefix = child.text[:4]
                                 suffix = ""
                                 if len(child.text) >= 8:
                                     suffix = child.text[-4:]
-                                if prefix == "D.C":
+                                if prefix == "D.C.":
                                     part._score.insert_repeat_command(cursor, DaCapo(al=suffix))
-                                elif prefix == "D.S":
+                                elif prefix == "D.S.":
                                     part._score.insert_repeat_command(cursor, DalSegno(al=suffix))
                 elif elem.tag == "staff":
                     staff = part._staffs[int(elem.text) - 1]

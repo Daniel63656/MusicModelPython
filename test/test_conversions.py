@@ -2,6 +2,7 @@ import os
 from fractions import Fraction
 from music_model import *
 from music_model.conversion import *
+from music_model.repeat import JumpIterator
 resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
 
 def test_songs():
@@ -17,4 +18,22 @@ def test_tuplet_length():
     assert outer_tuplet.get_duration() == Fraction(1, 4)
     inner_tuplet = outer_tuplet.get_element(Fraction(2, 3))
     assert inner_tuplet.get_duration() == Fraction(1, 12)
+
+def test_jumps():
+    expected = [
+        (0, 2),     # first D.C.
+        (0, 3),     # D.S. al Coda
+        (1, 5),     # To Coda (skip 2nd D.C.)
+        (6, 7),     # D.S. al Fine
+        (1, 8)      # from Segno to Fine
+    ]
+    score = import_xml(os.path.join(resources_dir, "jumps.musicxml"))
+    cursor = JumpIterator(score)
+    time = Fraction(0, 1)
+    for i, jump in enumerate(cursor):
+        print(f"{time} - {jump[0]}")
+        assert (time, jump[0]) == expected[i]
+        time = jump[1]
+    print(f"{time} - {cursor._time}")
+    assert (time, cursor.get_time()) == expected[-1]
     

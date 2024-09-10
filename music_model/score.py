@@ -1,31 +1,32 @@
 from __future__ import annotations
-import heapq
 import warnings
-from sortedcontainers import SortedDict, SortedSet
+from fractions import Fraction
+from sortedcontainers import SortedDict
 from .collection import DiscontinuousRangeMap
-from .repeat import RepeatStart, RepeatEnd, Coda, Segno, Fine, Ending
-from .repeat import Cursor
+from .abstract import Range
+from .repeat import RepeatStart, RepeatEnd, Coda, Segno, ToCoda, Fine, Ending
+from .repeat import JumpIterator
 
 import typing as t
 if t.TYPE_CHECKING:
-    from fractions import Fraction
     from typing import Iterable
     from .part import Part
     from .repeat import RepeatMark, RepeatCommand
 
 
-class Score():
+class Score(Range):
     def __init__(self):
         self._parts = []
         # repeat related
         # repeat marks (points to jump to but don't initiate jumps itself)
         self._repeat_starts = SortedDict()
-        self._segnos = SortedSet()
-        self._codas = SortedSet()
+        self._segnos = SortedDict()
+        self._codas = SortedDict()
         # repeat commands (conditionally triggered)
         self._repeat_ends = SortedDict()
-        self._repeat_commands = SortedDict()    # only allows one repeat command at a time
-        self._fines = SortedDict()
+        self._repeat_commands = SortedDict()    # only allows one RepeatAdvance at a time
+        self._to_codas = SortedDict()
+        self._fines = SortedDict()  # probably only one
         # endings can act as both repeat marks and commands
         self._endings = DiscontinuousRangeMap()
 
@@ -50,6 +51,8 @@ class Score():
     def insert_repeat_command(self, onset, repeat_cmd: RepeatCommand):
         if isinstance(repeat_cmd, RepeatEnd):
             self._repeat_ends[onset] = repeat_cmd
+        elif isinstance(repeat_cmd, ToCoda):
+            self._to_codas[onset] = repeat_cmd
         elif isinstance(repeat_cmd, Fine):
             self._fines[onset] = repeat_cmd
         elif isinstance(repeat_cmd, Ending):
@@ -64,7 +67,21 @@ class Score():
         self._endings[ending._onset] = ending
         ending._score = self
 
+    def get_onset(self) -> Fraction:
+        return Fraction(0, 1)
+
+    def get_offset(self) -> Fraction:
+        max_offset = Fraction(0, 1)
+        for part in self._parts:
+            for staff in part._staffs.values():
+                if len(staff._events) > 0:
+                    max_offset = max(max_offset, staff._events.values()[-1].get_offset())
+        return max_offset
+
     def unfold(self):
-        cursor = Cursor(self)
+        cursor = JumpIterator(self)
+        time = Fraction(0, 1)
         for jump in cursor:
-            print(jump)
+            print(f"{time} - {jump[0]}")
+            time = jump[1]
+        print(f"{time} - {cursor._time}")
