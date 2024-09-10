@@ -7,8 +7,8 @@ from .abstract import Range
 
 class RepeatMark(ABC):
     """
-    Base class for marks that indicate return or jump points but do not trigger jumps themselves.
-    They are positioned at measure onsets.
+    Abstract base class for marks that indicate return or jump points but do not trigger jumps themselves.
+    They are positioned at measure onsets. Should not be instantiated directly.
     """
     def __init__(self):
         self._score = None
@@ -36,10 +36,11 @@ class Segno(RepeatMark):
         super().__init__()
 
 
-class RepeatCommand(ABC):
+class RepeatAction(ABC):
     """
-    Base class for commands that trigger a jump in the score (if certain condidions are fulfilled).
+    Abstract base class for objects that trigger a jump in the score (if certain condidions are fulfilled).
     They are placed at measure offsets, while `Endings` must start and end on measure boundaries.
+    Should not be instantiated directly.
     """
     def __init__(self):
         self._score = None
@@ -56,7 +57,7 @@ class RepeatCommand(ABC):
         return self._onset < other._onset
 
 
-class RepeatEnd(RepeatCommand):
+class RepeatEnd(RepeatAction):
     def __init__(self):
         super().__init__()
         self._iterations = 2
@@ -69,7 +70,7 @@ class RepeatEnd(RepeatCommand):
         return Fraction(0, 1)
 
 
-class ToCoda(RepeatCommand):
+class ToCoda(RepeatAction):
     def __init__(self):
         super().__init__()
 
@@ -84,7 +85,7 @@ class ToCoda(RepeatCommand):
         return "To Coda"
 
 
-class Fine(RepeatCommand):
+class Fine(RepeatAction):
     def __init__(self):
         super().__init__()
 
@@ -96,7 +97,7 @@ class Fine(RepeatCommand):
         return "Fine"
 
 
-class Ending(RepeatCommand):
+class Ending(RepeatAction):
     def __init__(self, onset: Fraction, offset: Fraction, numbers: set[int]):
         super().__init__()
         self._onset = onset
@@ -108,10 +109,11 @@ class Ending(RepeatCommand):
         return self._offset
 
 
-class RepeatAdvance(RepeatCommand):
+class RepeatCommand(RepeatAction):
     """
-    Repeat command of the form: Da/Dal [return point] (al [destination]), where the jump to the return point 
-    is followed by continuous play until the destination (`Fine`, `ToCoda` or `Self`) is reached.
+    Abstract base class for repeat commands of the form: Da/Dal [return point] (al [destination]), where the 
+    jump to the return point is followed by continuous play until the destination (`Fine`, `ToCoda` or `Self`)
+    is reached. Should not be instantiated directly.
     """
     def __init__(self, al: str=''):
         super().__init__()
@@ -119,7 +121,7 @@ class RepeatAdvance(RepeatCommand):
             raise ValueError(f"Invalid value for 'al': {al}. Must be empty, 'Fine' or 'Coda'.")
         self._al = al
 
-    def get_destination(self) -> RepeatCommand:
+    def get_destination(self) -> RepeatAction:
         if self._al is '':
             return self
         if self._al == 'Fine':
@@ -133,40 +135,27 @@ class RepeatAdvance(RepeatCommand):
             idx = self._score._to_codas.bisect_right(self._onset)
             if idx < len(self._score._to_codas):
                 return self._score._to_codas.values()[idx]
+            # TODO maybe return self instead?
             raise ValueError("No ToCoda destination found.")
-    
-    # to keep class abstract
-    @abstractmethod
-    def prefix(self) -> str:
-        pass
 
     def __str__(self):
         return f"{self.prefix}{f' al {self._al}' if self._al else ''}"
 
 
-class DaCapo(RepeatAdvance):
+class DaCapo(RepeatCommand):
     def __init__(self, al: str=''):
-        super().__init__()
-        if al not in {'', 'Fine', 'Coda'}:
-            raise ValueError(f"Invalid value for 'al': {al}. Must be empty, 'Fine' or 'Coda'.")
-        self._al = al
+        super().__init__(al)
 
     def jump(self) -> Fraction:
         return Fraction(0, 1)
-    
-    def prefix(self) -> str:
-        return "D.C."
-    
+
     def __str__(self):
         return f"D.C.{f' al {self._al}' if self._al else ''}"
 
 
-class DalSegno(RepeatAdvance):
+class DalSegno(RepeatCommand):
     def __init__(self, al: str=''):
-        super().__init__()
-        if al not in {'', 'Fine', 'Coda'}:
-            raise ValueError(f"Invalid value for 'al': {al}. Must be empty, 'Fine' or 'Coda'.")
-        self._al = al
+        super().__init__(al)
 
     def jump(self) -> Fraction:
         #TODO what if Segno lies in the future?
@@ -175,9 +164,6 @@ class DalSegno(RepeatAdvance):
         if idx > 0:     # idx > 0 if such an entry exists
             return self._score._segnos.values()[idx - 1]._onset
         raise ValueError("No Segno found to jump to.")
-    
-    def prefix(self) -> str:
-        return "D.S."
     
     def __str__(self):
         return f"D.S.{f' al {self._al}' if self._al else ''}"
@@ -208,24 +194,52 @@ class JumpIterator:
         """
         self._score = score
         self._time = start_time
+        # make sure commands are handled only once <RepeatCommand, int>
         self._handled_commands = {}
+        # save destination for next iteration
         self._al = None
-
-    # RULES:
-    # - The most recent (last seen) |: is paired to :| (starts override prior starts which remain unmatched).
-    # - Begin Of Score (BOS) can act as |:, but EOS not as :|. Unmatched |: are considered notation error.
-    # - Repeats should not "combine and cut" sections. In practice, however, one can contrive such cases:  |: ... :| ... :|
-    #       this is handled by reusing the start for both ends and ignoring inner end the second time.
-    # - As described before, repeat ends are only executed once (execution includes repeating multiple times in accordance to endings)
-    # - repeats are handled before Da Capo/Dal Segno commands. If :| and D.C./D.S. coincide, :| takes presedence.
-    # - D.C./D.S. are only executed if outside an active repeat range. (|: ... :|).
-    # - Executing D.C./D.S. block repeats (and other commands?) until the command reaches its destination (Coda, Fine, or command itself if no al)
-    # - To Coda and Fine jump is only executed if actively in a D.C./D.S. al Coda command.
         
     def __iter__(self):
         return self  # Cursor is its own iterator
+    
+    def _get_next_unexecuted_action(self, collection):
+        idx = collection.bisect_right(self._time)
+        while idx < len(collection):
+            cmd = collection.values()[idx]
+            # don't execute commands twice
+            if cmd in self._handled_commands:
+                idx += 1
+            else:
+                return cmd
+        return None
+    
+    def _execute_repeat_end(self, end):
+        self._handled_commands[end] = 1
+        self._time = end.jump()
+        #print(f"backward jump {end._onset} -> {self._time}")
+        return end._onset, self._time 
+    
+    def _execute_repeat_command(self, cmd):
+        self._handled_commands[cmd] = 1
+        destination = cmd.get_destination()
+        self._time = destination._onset     
+        if cmd._al != '':
+            self._al = destination
+        #print(f"backward jump {cmd._onset} -> {cmd.jump()}")
+        return cmd._onset, cmd.jump()
 
     def __next__(self):
+        # RULES:
+        # - The most recent (last seen) |: is paired to :| (starts override prior starts which remain unmatched).
+        # - Begin Of Score (BOS) can act as |:, but EOS not as :|. Unmatched |: are considered notation error.
+        # - Repeats should not "combine and cut" sections. In practice, however, one can contrive such cases:  |: ... :| ... :|
+        #       this is handled by reusing the start for both ends and ignoring inner end the second time.
+        # - As described before, repeat ends are only executed once (execution includes repeating multiple times in accordance to endings)
+        # - repeats are handled before Da Capo/Dal Segno commands. If :| and D.C./D.S. coincide, :| takes presedence.
+        # - D.C./D.S. are only executed if outside an active repeat range. (|: ... :|).
+        # - Executing D.C./D.S. blocks all other actions until the command reaches its destination (Coda, Fine, or command itself if no al)
+
+        # first, check if instruction from last iteration carries over
         if isinstance(self._al, Fine):
             raise StopIteration
         if isinstance(self._al, ToCoda):
@@ -234,25 +248,20 @@ class JumpIterator:
             self._al = None
             #print(f"forward jump {old_time} -> {self._time}")
             return old_time, self._time
-        # check repeat commands
-        idx = self._score._repeat_commands.bisect_right(self._time)
-        while idx < len(self._score._repeat_commands):
-            cmd = self._score._repeat_commands.values()[idx]
-            # don't execute commands twice
-            if cmd in self._handled_commands:
-                idx += 1
-            else:
-                self._handled_commands[cmd] = 1
-                # return but then advance cursor to destination
-                destination = cmd.get_destination()
-                self._time = destination._onset    
-                # cache next action if al is not empty        
-                if cmd._al != '':
-                    self._al = destination
-                # return backward jump to repeat marker
-                #print(f"backward jump {cmd._onset} -> {cmd.jump()}")
-                return cmd._onset, cmd.jump()
-        raise StopIteration
+        # not the case, fetch next RepeatEnd and next RepeatCommand
+        end = self._get_next_unexecuted_action(self._score._repeat_ends)
+        cmd = self._get_next_unexecuted_action(self._score._repeat_commands)
+        if end is not None:
+            repeat_start_onset = end.jump()
+            if cmd is None or repeat_start_onset < cmd._onset:
+                # no command or in active repeat
+                return self._execute_repeat_end(end)
+            # not the case, execute repeat command instead
+            return self._execute_repeat_command(cmd)
+        else:
+            if cmd is not None:
+                return self._execute_repeat_command(cmd)
+            raise StopIteration # both were None
     
     def get_time(self) -> Fraction:
         """
@@ -261,21 +270,7 @@ class JumpIterator:
         """
         return self._time
 
-    # def __next__(self):
-    #     while True:
-    #         next_jump = self._get_next_jump()
-    #         if isinstance(next_jump, RepeatEnd):
-    #             # maximal number of repeats done, reset repeat_iteration and ignore RepeatEnd
-    #             if self.__repeat_iteration >= next_jump._iterations:
-    #                 self.__repeat_iteration = 1
-    #                 self.__time = next_jump._onset
-    #             else:
-    #                 self.__repeat_iteration += 1
-    #                 self.__time = next_jump.jump()
-    #                 return next_jump._onset, self.__time
-    #         elif isinstance(next_jump, RepeatCommand):
-    #             self.__time = next_jump.jump()
-    #             return next_jump._onset, self.__time
+
 
 
 

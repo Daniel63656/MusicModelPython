@@ -11,7 +11,7 @@ import typing as t
 if t.TYPE_CHECKING:
     from typing import Iterable
     from .part import Part
-    from .repeat import RepeatMark, RepeatCommand
+    from .repeat import RepeatMark, RepeatAction
 
 
 class Score(Range):
@@ -22,11 +22,11 @@ class Score(Range):
         self._repeat_starts = SortedDict()
         self._segnos = SortedDict()
         self._codas = SortedDict()
-        # repeat commands (conditionally triggered)
+        # repeat commands
         self._repeat_ends = SortedDict()
-        self._repeat_commands = SortedDict()    # only allows one RepeatAdvance at a time
         self._to_codas = SortedDict()
-        self._fines = SortedDict()  # probably only one
+        self._fines = SortedDict()  # TODO restrict to one?
+        self._repeat_commands = SortedDict()    # only allows one command at a time
         # endings can act as both repeat marks and commands
         self._endings = DiscontinuousRangeMap()
 
@@ -48,7 +48,7 @@ class Score(Range):
         repeat_mark._score = self
         repeat_mark._onset = onset
 
-    def insert_repeat_command(self, onset, repeat_cmd: RepeatCommand):
+    def insert_repeat_command(self, onset, repeat_cmd: RepeatAction):
         if isinstance(repeat_cmd, RepeatEnd):
             self._repeat_ends[onset] = repeat_cmd
         elif isinstance(repeat_cmd, ToCoda):
