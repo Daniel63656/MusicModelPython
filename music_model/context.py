@@ -19,7 +19,7 @@ class Clef():
         return self._octave
     
     def get_octave_shift(self) -> int:
-        return self.get_octave_shift
+        return self._octave - self._clef_type.get_standard_octave()
 
     def get_staff_line_position(self) -> int:
         """

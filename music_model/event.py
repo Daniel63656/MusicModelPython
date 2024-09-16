@@ -28,7 +28,7 @@ class Event(NavigableRange):
         return self._staff
     
     def get_measure(self) -> Measure:
-        return self._staff.get_measure(self._onset)
+        return self._staff._part.get_measure(self._onset)
     
     def get_chords_and_rests(self) -> Iterable[ChordRest]:
         return self._chord_rests.values()
