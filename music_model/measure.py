@@ -38,7 +38,12 @@ class Measure(NavigableRange):
         next_measure = self.next()
         if next_measure is not None:
             return next_measure.get_onset()
-        return self._staff.get_offset()
+        # last measure, get length by checking all staffs of part
+        max_offset = Fraction(0, 1)
+        for staff in self._staff._part._staffs.values():
+            if len(staff._events) > 0:
+                max_offset = max(max_offset, staff._events.values()[-1].get_offset())
+        return max_offset
     
     def next(self) -> Optional[Self]:
         idx = self._staff._measures.bisect_right(self.get_onset())

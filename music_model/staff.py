@@ -1,4 +1,5 @@
 from __future__ import annotations
+from fractions import Fraction
 from sortedcontainers import SortedDict
 from .collection import ContinuousRangeMap, DiscontinuousRangeMap
 from .abstract import Range
@@ -6,7 +7,6 @@ from .abstract import Range
 import typing as t
 if t.TYPE_CHECKING:
     from typing import Iterator, Iterable, Optional
-    from fractions import Fraction
     from .part import Part
     from .event import Event
     from .abstract import ChordRest
