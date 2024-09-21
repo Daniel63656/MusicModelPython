@@ -196,8 +196,8 @@ def import_xml(filepath) -> Score:
                         elif child.tag in ["octave", "display-octave"]:
                             octave = int(child.text)
                             pitch += octave * 12
-                elif not is_rest and elem.tag == "alter":
-                    pitch += int(elem.text)
+                        elif child.tag == "alter":
+                            pitch += int(child.text)
                 elif elem.tag == "dot":
                     dots += 1
                 elif elem.tag == "beam":
@@ -364,7 +364,7 @@ def import_xml(filepath) -> Score:
                     process_clef(elem)
 
         def process_direction(root):
-            staff = None
+            staff = part._staffs[0] # if no staff specified, assume first one
             octavation = None
             octavation_start = None
             dynamics = None
