@@ -4,6 +4,7 @@ from music_model import *
 from music_model.conversion import *
 from music_model.repeat import JumpIterator
 resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+ZERO = Fraction(0, 1)
 
 def test_songs():
     for file in os.listdir(resources_dir):
@@ -19,10 +20,26 @@ def test_tuplet_length():
     inner_tuplet = outer_tuplet.get_element(Fraction(2, 3))
     assert inner_tuplet.get_duration() == Fraction(1, 12)
 
+def test_standard_staff_contexts():
+    score = Score()
+    part = Part()
+    score.append_part(part)
+    staff1 = Staff()
+    staff2 = Staff()
+    # inserting to part adds standard contexts to staffs
+    part.insert_staff(0, staff1)
+    part.insert_staff(1, staff2)
+    assert staff1.get_clef(ZERO).equals(Clef(ClefType.TREBLE))
+    assert staff1.get_key_signature(ZERO).equals(KeySignature(0))
+    assert staff1.get_time_signature(ZERO).equals(TimeSignature(4, 4))
+    assert staff2.get_clef(ZERO).equals(Clef(ClefType.BASS))
+    assert staff2.get_key_signature(ZERO).equals(KeySignature(0))
+    assert staff2.get_time_signature(ZERO).equals(TimeSignature(4, 4))
+
 # for jump tests
 def verify_sections(score, expected):
     cursor = JumpIterator(score)
-    time = Fraction(0, 1)
+    time = ZERO
     for i, jump in enumerate(cursor):
         print(f"{time} - {jump[0]}")
         assert (time, jump[0]) == expected[i]

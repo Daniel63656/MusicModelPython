@@ -125,4 +125,4 @@ class TimeSignature:
         # semantic equals, does not affect collections
         if not isinstance(other, self.__class__):
             return False
-        return self._numerator == other._numerator and self._denominator == other.denominator and self._symbolic == other._symbolic
+        return self._numerator == other._numerator and self._denominator == other._denominator and self._symbolic == other._symbolic
