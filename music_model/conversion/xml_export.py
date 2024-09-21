@@ -276,8 +276,9 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 if len(xml_notations) > 0:
                     xml_note.append(xml_notations)
 
-        def create_attributes_if_necessary(xml_attributes, staff, onset):
+        def create_attributes_if_necessary(xml_measure, staff, onset):
             nonlocal first_attributes_in_score
+            xml_attributes = ET.Element("attributes")
             if first_attributes_in_score:
                 ET.SubElement(xml_attributes, "divisions").text = str(division)
             # do key signature
@@ -297,6 +298,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 create_clef(xml_attributes, clef, staff._id + 1)
             if len(xml_attributes) > 0:
                 first_attributes_in_score = False
+                xml_measure.append(xml_attributes)
 
         def create_measure(xml_measure, part, measure):
             onset = measure._onset
@@ -313,12 +315,9 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 xml_direction = ET.SubElement(xml_measure, "direction")
                 xml_direction.append(xml_direction_type)
             # create attributes at start of measure (in grand staff not every staff might have elements at measure start)
-            xml_attributes = ET.Element("attributes")
             for staff in part._staffs.values():
-                create_attributes_if_necessary(xml_attributes, staff, onset)
-                handled_staff_attributes.add((staff, onset))
-            if len(xml_attributes) > 0:
-                xml_measure.append(xml_attributes)
+                create_attributes_if_necessary(xml_measure, staff, onset)
+                handled_staff_attributes.add((staff, onset))       
             # tokenize, one voice at a time
             for voice in part._voices.values():
                 # backup to measure onset if necessary (from prior voices)
@@ -335,10 +334,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     pair = (chord_rest.get_staff(), onset)
                     # place attributes if not already handled
                     if pair not in handled_staff_attributes:
-                        xml_attributes = ET.Element("attributes")
-                        create_attributes_if_necessary(xml_attributes, chord_rest.get_staff(), onset)
-                        if len(xml_attributes) > 0:
-                            xml_measure.append(xml_attributes)
+                        create_attributes_if_necessary(xml_measure, chord_rest.get_staff(), onset)
                     # place pre <note> directions if not already handled
                     if pair not in handled_staff_directions:
                         xml_direction_type = ET.Element("direction-type")
@@ -410,6 +406,11 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
         for measure in part._measures.values():
             xml_measure = ET.SubElement(xml_part, "measure", number=str(measure.get_index() + 1))
             create_measure(xml_measure, part, measure)
+        # add end barline to last measure
+        barline = ET.SubElement(xml_measure, "barline", location="right")
+        ET.SubElement(barline, "bar-style").text = "light-heavy"
+        
+        
     # =============== END OF PART SCOPE =============
             
     # =============== END OF SCORE SCOPE FUNCTION DECLARATIONS =============

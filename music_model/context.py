@@ -33,6 +33,12 @@ class Clef():
         returns: staff line position (slp) of C0 in the clef. Used for pitch calculations.
         """
         return self._C0_reference_line
+    
+    def equals(self, other) -> bool:
+        # semantic equals, does not affect collections
+        if not isinstance(other, self.__class__):
+            return False
+        return self._clef_type == other._clef_type and self._octave == other._octave
 
 
 class KeySignature:
@@ -57,6 +63,12 @@ class KeySignature:
 
     def is_minor(self) -> bool:
         return not self._mode
+    
+    def equals(self, other) -> bool:
+        # semantic equals, does not affect collections
+        if not isinstance(other, self.__class__):
+            return False
+        return self._fifths == other._fifths and self._mode == other._mode
 
     def chromatic_index_has_accidental(self, idx) -> bool:
         for i in range(1, abs(self._fifths) + 1):
@@ -108,3 +120,9 @@ class TimeSignature:
     
     def get_beat_type(self) -> int:
         return self._denominator
+    
+    def equals(self, other) -> bool:
+        # semantic equals, does not affect collections
+        if not isinstance(other, self.__class__):
+            return False
+        return self._numerator == other._numerator and self._denominator == other.denominator and self._symbolic == other._symbolic

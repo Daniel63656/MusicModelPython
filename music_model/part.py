@@ -1,12 +1,14 @@
 from __future__ import annotations
+from fractions import Fraction
 from .collection import SafeDict, ContinuousRangeMap
+from .context import Clef, KeySignature, TimeSignature
+from .enums import ClefType
 from .staff import Staff
 from .voice import Voice
 
 import typing as t
 if t.TYPE_CHECKING:
     from typing import Iterable, Optional
-    from fractions import Fraction
     from .score import Score
     from .measure import Measure
     from .abstract import ChordRest
@@ -57,6 +59,16 @@ class Part():
         self._staffs[id] = staff
         staff._part = self
         staff._id = id
+        # assume standard contexts if staff doesn't have any. Can be overwritten later.
+        if not staff._clefs:
+            if id == 0:
+                staff.insert_clef(Fraction(0, 1), Clef(ClefType.TREBLE))
+            elif id == 1:
+                staff.insert_clef(Fraction(0, 1), Clef(ClefType.BASS))
+        if not staff._key_signatures:
+            staff.insert_key_signature(Fraction(0, 1), KeySignature(0))
+        if not staff._time_signatures:
+            staff.insert_time_signature(Fraction(0, 1), TimeSignature(4, 4))
 
     def insert_voice(self, id: int, voice: Voice):
         self._voices[id] = voice
