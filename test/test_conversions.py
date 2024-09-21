@@ -38,6 +38,12 @@ def test_standard_contexts():
     # check if standard measure has been created in part
     assert part._measures is not None
 
+def test_pitch_retrieval():
+    midi_pitches = [68, 68, 66, 67, 61, 73, 68, 65, 60, 72, 67, 65]
+    score = import_xml(os.path.join(resources_dir, "acc_and_keys.musicxml"))
+    for i, chord in enumerate(score.get_parts()[0].get_staff(0).get_chords_and_rests()):
+        assert next(iter(chord.get_notes())).get_pitch() == midi_pitches[i]
+
 # for jump tests
 def verify_sections(score, expected):
     cursor = JumpIterator(score)
