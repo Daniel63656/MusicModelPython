@@ -167,8 +167,8 @@ def import_xml(filepath) -> Score:
                         elif child.tag in ["octave", "display-octave"]:
                             octave = int(child.text)
                             pitch += octave * 12
-                elif not is_rest and elem.tag == "alter":
-                    pitch += int(elem.text)
+                        elif child.tag == "alter":
+                            pitch += int(child.text)
                 elif elem.tag == "dot":
                     dots += 1
                 elif elem.tag == "beam":
