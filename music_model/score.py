@@ -4,6 +4,7 @@ from fractions import Fraction
 from sortedcontainers import SortedDict
 from .collection import DiscontinuousRangeMap
 from .abstract import Range
+from .measure import Measure
 from .repeat import RepeatStart, RepeatEnd, Coda, Segno, ToCoda, Fine, Ending
 from .repeat import JumpIterator
 
@@ -37,6 +38,9 @@ class Score(Range):
         self._parts.append(part)
         part._score = self
         part._idx = len(self._parts) - 1
+        # insert standard measure if none exists
+        if not part._measures:
+            part.insert_measure(Fraction(0, 1), Measure())
 
     def insert_repeat_mark(self, onset: Fraction, repeat_mark: RepeatMark):
         if isinstance(repeat_mark, RepeatStart):

@@ -20,7 +20,7 @@ def test_tuplet_length():
     inner_tuplet = outer_tuplet.get_element(Fraction(2, 3))
     assert inner_tuplet.get_duration() == Fraction(1, 12)
 
-def test_standard_staff_contexts():
+def test_standard_contexts():
     score = Score()
     part = Part()
     score.append_part(part)
@@ -35,6 +35,8 @@ def test_standard_staff_contexts():
     assert staff2.get_clef(ZERO).equals(Clef(ClefType.BASS))
     assert staff2.get_key_signature(ZERO).equals(KeySignature(0))
     assert staff2.get_time_signature(ZERO).equals(TimeSignature(4, 4))
+    # check if standard measure has been created in part
+    assert part._measures is not None
 
 # for jump tests
 def verify_sections(score, expected):
