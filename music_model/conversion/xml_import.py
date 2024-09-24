@@ -1,7 +1,8 @@
 from music_model import *
 from fractions import Fraction
-import os, xml.etree.ElementTree as ET
+import os, zipfile, xml.etree.ElementTree as ET
 from ..collection import SafeDict
+from typing import Union, IO
 accidental_by_name = {
     "sharp": Accidental.SHARP,
     "flat": Accidental.FLAT,
@@ -21,7 +22,7 @@ articulation_by_name = {
 }
 
 
-def import_xml(filepath) -> Score:
+def import_xml(file_path: str) -> Score:
 
     def process_part(root, part):
         # declare outer scope variables
@@ -264,7 +265,8 @@ def import_xml(filepath) -> Score:
                         elif child.tag == "dynamics":
                             # musicXML allows several dynamics. For now, last rules
                             for dynamic in child:
-                                staff._dynamics[cursor] = Dynamics(dynamic.tag)
+                                if dynamic.tag in Dynamics.__members__:
+                                    staff._dynamics[cursor] = Dynamics(dynamic.tag)
                         elif child.tag == "fermata":
                             has_fermata = True
                 elif elem.tag == "tie":
@@ -384,17 +386,18 @@ def import_xml(filepath) -> Score:
                         elif child.tag == "dynamics":
                             # musicXML allows several dynamics. For now, last rules
                             for dynamic in child:
-                                dynamics = dynamic.tag
+                                if dynamic.tag in Dynamics.__members__:
+                                    dynamics = dynamic.tag
                         elif child.tag == "coda":
                             part._score.insert_repeat_mark(cursor, Coda())
                         elif child.tag == "segno":
                             part._score.insert_repeat_mark(cursor, Segno())
-                        elif child.tag == "words":
+                        elif child.tag == "words" and child.text is not None:
                             if child.text == "Fine":
                                 part._score.insert_repeat_command(cursor, Fine())
                             elif child.text == "To Coda":
                                 part._score.insert_repeat_command(cursor, ToCoda())
-                            else:
+                            elif len(child.text) >= 4:
                                 prefix = child.text[:4]
                                 suffix = ""
                                 if len(child.text) >= 8:
@@ -472,22 +475,26 @@ def import_xml(filepath) -> Score:
         return part
 
     # =============== READ THE FILE =============
-    extension = os.path.splitext(filepath)[1]
-    if extension != ".xml" and extension != ".musicxml":
-        raise ValueError("Invalid file extension. Must be .xml or .musicxml.")
+    extension = os.path.splitext(os.path.basename(file_path))[1]
+    if extension == ".mxl":     # unzip if necessary
+        with zipfile.ZipFile(file_path, 'r') as zip_ref:
+            xml_file = zip_ref.namelist()[1]
+            file_content = zip_ref.read(xml_file)   # in bytes
+        tree = ET.ElementTree(ET.fromstring(file_content.decode('utf-8')))
+    elif extension == ".xml" or extension == ".musicxml":
+        with open(file_path, "r") as file:
+            tree = ET.parse(file)
+    else:
+        raise ValueError("Invalid file extension. Must be mxl, xml or musicxml.")
     
-    with open(filepath, "r") as file:
-        tree = ET.parse(file)
-        root = tree.getroot()
-        if root.tag != 'score-partwise':
-            raise Exception(f"Cannot parse MusicXML files in {root.tag}.")
-        
-        score = Score()
-        # traverse xml elements only once
-        for elem in root:
-            if elem.tag == "part":
-                part = Part()
-                score.append_part(part)
-                part = process_part(elem, part)
-            
+    root = tree.getroot()
+    if root.tag != 'score-partwise':
+        raise Exception(f"Cannot parse MusicXML files in {root.tag}.")
+    score = Score()
+    # traverse xml elements only once
+    for elem in root:
+        if elem.tag == "part":
+            part = Part()
+            score.append_part(part)
+            part = process_part(elem, part)     
     return score
