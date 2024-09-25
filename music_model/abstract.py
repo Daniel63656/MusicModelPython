@@ -29,7 +29,7 @@ class Range(ABC):
     def encloses(self, time: Fraction) -> bool:
         """ Determines if the specified value is within the range. By default, the start is inclusive
             and the end is exclusive. This method can be overridden to adjust the openness/closeness 
-            of the interval. This function is used inside the ```DiscontinuousRangeMap``` to determine a hit.
+            of the interval. This function is used inside the ```DiscontinuousMap``` to determine a hit.
             
             param key: The value to be checked.
             return: True if the specified value is in range, otherwise False.

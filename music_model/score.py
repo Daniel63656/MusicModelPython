@@ -2,7 +2,7 @@ from __future__ import annotations
 import warnings
 from fractions import Fraction
 from sortedcontainers import SortedDict
-from .collection import DiscontinuousRangeMap
+from .collection import DiscontinuousMap
 from .abstract import Range
 from .measure import Measure
 from .repeat import RepeatStart, RepeatEnd, Coda, Segno, ToCoda, Fine, Ending
@@ -29,7 +29,7 @@ class Score(Range):
         self._fines = SortedDict()  # TODO restrict to one?
         self._repeat_commands = SortedDict()    # only allows one command at a time
         # endings can act as both repeat marks and commands
-        self._endings = DiscontinuousRangeMap()
+        self._endings = DiscontinuousMap()
 
     def get_parts(self) -> Iterable[Part]:
         return self._parts

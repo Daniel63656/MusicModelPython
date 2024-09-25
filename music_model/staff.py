@@ -1,7 +1,7 @@
 from __future__ import annotations
 from sortedcontainers import SortedDict
 from fractions import Fraction
-from .collection import ContinuousRangeMap, DiscontinuousRangeMap
+from .collection import ContinuousMap, DiscontinuousMap
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -19,11 +19,11 @@ class Staff():
         self._part = None
         self._id = None
         self._events = SortedDict()
-        self._clefs = ContinuousRangeMap()
-        self._key_signatures = ContinuousRangeMap()
-        self._time_signatures = ContinuousRangeMap()
-        self._octave_shifts = DiscontinuousRangeMap()
-        self._dynamics = ContinuousRangeMap()
+        self._clefs = ContinuousMap()
+        self._key_signatures = ContinuousMap()
+        self._time_signatures = ContinuousMap()
+        self._octave_shifts = DiscontinuousMap()
+        self._dynamics = ContinuousMap()
 
     def get_part(self) -> Part:
         return self._part

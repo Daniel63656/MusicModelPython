@@ -44,6 +44,22 @@ def test_pitch_retrieval():
     for i, chord in enumerate(score.get_parts()[0].get_staff(0).get_chords_and_rests()):
         assert next(iter(chord.get_notes())).get_pitch() == midi_pitches[i]
 
+def test_ending_import():
+    score = import_xml(os.path.join(resources_dir, "endings.musicxml"))
+    e1 = score._endings.get(Fraction(1, 1))
+    assert e1 == score._endings.get_by_offset(Fraction(2, 1))
+    assert 1 in e1._numbers
+    e2 = score._endings.get(Fraction(2, 1))
+    assert e2 == score._endings.get_by_offset(Fraction(3, 1))
+    assert 2 in e2._numbers
+    e3 = score._endings.get(Fraction(4, 1))
+    assert e3 == score._endings.get_by_offset(Fraction(5, 1))
+    assert 1 in e3._numbers
+    assert 2 in e3._numbers
+    e4 = score._endings.get(Fraction(5, 1))
+    assert e4 == score._endings.get_by_offset(Fraction(6, 1))
+    assert 3 in e4._numbers  
+
 # for jump tests
 def verify_sections(score, expected):
     cursor = JumpIterator(score)

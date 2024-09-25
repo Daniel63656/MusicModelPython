@@ -35,6 +35,7 @@ def import_xml(file_path: str) -> Score:
         grace_beam = None
         grace_chords = []   # save grace chords with beam_info and voice-id until their chord is specified
         octave_shifts = {}  # <Staff, (onset: Fraction, Octavation)>
+        ending = None       # <onset, numbers> to handle endings    
         # cache <onset, signature> to apply signature without number at the end when all staffs defined
         key_signatures = {}
         time_signatures = {}
@@ -422,6 +423,7 @@ def import_xml(file_path: str) -> Score:
         
         def process_measure(root):
             nonlocal cursor
+            nonlocal ending
             nonlocal longest_voice_offset
             measure_onset = cursor
             # loop over elements
@@ -439,7 +441,13 @@ def import_xml(file_path: str) -> Score:
                     process_direction(elem)
                 elif elem.tag == "barline":
                     for child in elem:
-                        if child.tag == "repeat":
+                        if child.tag == "ending":
+                            if child.attrib.get("type") == "start":
+                                ending = (cursor, set(map(int, child.attrib.get("number").split(","))))
+                            else:
+                                part._score.add_ending(Ending(ending[0], cursor, ending[1]))
+                            pass
+                        elif child.tag == "repeat":
                             if child.attrib.get("direction") == "forward": 
                                 r = RepeatStart()
                                 r._score = part._score

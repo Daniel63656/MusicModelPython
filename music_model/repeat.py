@@ -97,7 +97,7 @@ class Fine(RepeatAction):
         return "Fine"
 
 
-class Ending(RepeatAction):
+class Ending(RepeatAction, Range):
     def __init__(self, onset: Fraction, offset: Fraction, numbers: set[int]):
         super().__init__()
         self._onset = onset
@@ -106,6 +106,15 @@ class Ending(RepeatAction):
 
     def jump(self) -> Fraction:
         # applied skip if ending not appled
+        return self._offset
+    
+    def get_numbers(self) -> set[int]:
+        return self._numbers
+    
+    def get_onset(self) -> Fraction:
+        return self._onset
+        
+    def get_offset(self) -> Fraction:
         return self._offset
 
 
@@ -122,7 +131,7 @@ class RepeatCommand(RepeatAction):
         self._al = al
 
     def get_destination(self) -> RepeatAction:
-        if self._al is '':
+        if self._al == '':
             return self
         if self._al == 'Fine':
             # jump to fine by finding higher entry. If None, throw error

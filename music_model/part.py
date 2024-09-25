@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fractions import Fraction
-from .collection import SafeDict, ContinuousRangeMap
+from .collection import SafeDict, ContinuousMap
 from .context import Clef, KeySignature, TimeSignature
 from .enums import ClefType
 from .staff import Staff
@@ -22,7 +22,7 @@ class Part():
         # these will auto-add staffs/voices if querrying a new key
         self._staffs = SafeDict(lambda id: self.insert_staff(id, Staff()))
         self._voices = SafeDict(lambda id: self.insert_voice(id, Voice()))
-        self._measures = ContinuousRangeMap()
+        self._measures = ContinuousMap()
 
     def get_score(self) -> Score:
         return self._score

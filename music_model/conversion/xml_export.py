@@ -302,10 +302,16 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
 
         def create_measure(xml_measure, part, measure):
             onset = measure._onset
-            # place RepeatMarks
+            # left barline
+            xml_barline = ET.Element("barline")
+            if part._score._endings.get(onset) is not None:
+                number = ",".join(str(num) for num in part._score._endings[onset]._numbers)
+                ET.SubElement(xml_barline, "ending", number=number, type="start")
             if measure.starts_repeat():
-                xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="forward")
+            if len(xml_barline) > 0:
+                xml_measure.append(xml_barline)
+            # place direction at start of measure if necessary
             xml_direction_type = ET.Element("direction-type")
             if onset in part._score._codas is not None:
                 ET.SubElement(xml_direction_type, "coda")
@@ -398,9 +404,17 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
             if len(xml_direction_type) > 0:
                 xml_direction = ET.SubElement(xml_measure, "direction")
                 xml_direction.append(xml_direction_type)
+            # right barline
+            xml_barline = ET.Element("barline")
+            ending = part._score._endings.get_by_offset(onset)
+            if ending is not None:
+                number = ",".join(str(num) for num in ending._numbers)
+                ET.SubElement(xml_barline, "ending", number=number, type="stop")
             if onset in part._score._repeat_ends:
-                xml_barline = ET.SubElement(xml_measure, "barline")
                 ET.SubElement(xml_barline, "repeat", direction="backward")
+            if len(xml_barline) > 0:
+                xml_measure.append(xml_barline)
+
 
         # =============== END OF PART SCOPE FUNCTION DECLARATIONS =============
         for measure in part._measures.values():

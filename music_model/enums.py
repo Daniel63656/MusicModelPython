@@ -6,6 +6,9 @@ from . import Self
 
 
 class Accidental(Enum):
+    """
+    An enumeration representing the different types of accidentals in music notation.
+    """
     SHARP = 1
     DOUBLE_SHARP = 2
     FLAT = -1
