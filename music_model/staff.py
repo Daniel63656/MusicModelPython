@@ -15,6 +15,19 @@ if t.TYPE_CHECKING:
 
 
 class Staff():
+    """
+    Musical staff. Contains staff-level information such as``Event` and `OctaveShift` objects.
+
+    Attributes:
+    part (Part): The parent part of the staff.
+    id (int): The index of the staff in the part collection, serving as unique identifier. 0 for treble, 1 for bass.
+    events (SortedDict): A sorted dictionary of events in the staff, ordered by onset.
+    clefs (ContinuousMap): A continuous map of clefs in the staff.
+    key_signatures (ContinuousMap): A continuous map of key signatures in the staff.
+    time_signatures (ContinuousMap): A continuous map of time signatures in the staff.
+    octave_shifts (DiscontinuousMap): A discontinuous map of octave shifts in the staff.
+    dynamics (ContinuousMap): A continuous map of dynamics in the staff.
+    """
     def __init__(self):
         self._part = None
         self._id = None
@@ -31,7 +44,7 @@ class Staff():
     def get_id(self) -> int:
         return self._id
     
-    def get_events(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterator[Event]:
+    def get_events(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False) -> Iterator[Event]:
         """ Create an iterator of events between `start` and `end`.
 
             Both `start` and `end` default to `None` which is automatically
@@ -49,7 +62,7 @@ class Staff():
         """
         return self._events[time]
     
-    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterator[ChordRest]:
+    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False) -> Iterator[ChordRest]:
         """ Create an iterator of chords and rests between `start` and `end`.
 
             Both `start` and `end` default to `None` which is automatically

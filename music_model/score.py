@@ -1,6 +1,6 @@
 from __future__ import annotations
 import warnings
-from fractions import Fraction
+from music_model import ZERO
 from sortedcontainers import SortedDict
 from .collection import DiscontinuousMap
 from .abstract import Range
@@ -10,12 +10,27 @@ from .repeat import JumpIterator
 
 import typing as t
 if t.TYPE_CHECKING:
+    from fractions import Fraction
     from typing import Iterable
     from .part import Part
     from .repeat import RepeatMark, RepeatAction
 
 
 class Score(Range):
+    """
+    Musical score. Contains score-level information and parts.
+
+    Attributes:
+    parts (List[Part]): The parts of the score.
+    repeat_starts (SortedDict[Fraction, RepeatStart]): The repeat marks that start a repeat.
+    segnos (SortedDict[Fraction, Segno]): The segno marks.
+    codas (SortedDict[Fraction, Coda]): The coda marks.
+    repeat_ends (SortedDict[Fraction, RepeatEnd]): The repeat marks that end a repeat.
+    to_codas (SortedDict[Fraction, ToCoda]): The to coda marks.
+    fines (SortedDict[Fraction, Fine]): The fine marks.
+    repeat_commands (SortedDict[Fraction, RepeatAction]): The repeat commands.
+    endings (DiscontinuousMap[Fraction, Ending]): The endings.
+    """
     def __init__(self):
         self._parts = []
         # repeat related
@@ -35,12 +50,16 @@ class Score(Range):
         return self._parts
 
     def append_part(self, part: Part):
+        """
+        Append a part to the score, inserted at the end of the part list. If thr part has no
+        measures, a default measure is inserted at 0.
+        """
         self._parts.append(part)
         part._score = self
         part._idx = len(self._parts) - 1
         # insert standard measure if none exists
         if not part._measures:
-            part.insert_measure(Fraction(0, 1), Measure())
+            part.insert_measure(ZERO, Measure())
 
     def insert_repeat_mark(self, onset: Fraction, repeat_mark: RepeatMark):
         if isinstance(repeat_mark, RepeatStart):
@@ -72,10 +91,10 @@ class Score(Range):
         ending._score = self
 
     def get_onset(self) -> Fraction:
-        return Fraction(0, 1)
+        return ZERO
 
     def get_offset(self) -> Fraction:
-        max_offset = Fraction(0, 1)
+        max_offset = ZERO
         for part in self._parts:
             for staff in part._staffs.values():
                 if len(staff._events) > 0:
@@ -83,8 +102,12 @@ class Score(Range):
         return max_offset
 
     def unfold(self):
+        """
+        Unfold all repeat marks and commands and return an `Iterator` of continuous sections, each defined by a tuple of start and end
+        in score time. Useful for playback.
+        """
         cursor = JumpIterator(self)
-        time = Fraction(0, 1)
+        time = ZERO
         for jump in cursor:
             print(f"{time} - {jump[0]}")
             time = jump[1]

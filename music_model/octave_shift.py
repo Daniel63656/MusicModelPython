@@ -12,10 +12,19 @@ if t.TYPE_CHECKING:
     
 
 class OctaveShift(Range):
+    """
+    Represents an octave shift in a musical score. Octave shifts are a type of `Range` that change the pitch of notes in a `Staff`.
+
+    Attributes:
+    staff (Staff): The parent staff of the octave shift.
+    onset (Fraction): The onset of the octave shift. Equal to the onset of the first `Event` in the octave shift.
+    offset (Fraction): The offset of the octave shift. Equal to the onset of the last `Event` in the octave shift.
+    octavation (Octavation): The type of octavation.
+    """
     def __init__(self, staff: Staff, onset: Fraction, offset: Fraction, octavation: Octavation):
         self._staff = staff
         self._onset = onset
-        self._offset = offset     # onset of last Event to make independent of last Event's duration
+        self._offset = offset
         self._octavation = octavation
 
     def get_staff(self) -> Staff:
@@ -33,6 +42,9 @@ class OctaveShift(Range):
     def get_first_chord_or_rest(self) -> ChordRest:
         return next(self.get_chords_and_rests())
     
+    def get_last_chord_or_rest(self) -> ChordRest:
+        return next(self.get_chords_and_rests(reversed=True))
+    
     def get_onset(self) -> Fraction:
         return self._onset
         
@@ -40,5 +52,5 @@ class OctaveShift(Range):
         return self._offset
     
     def encloses(self, time: Fraction) -> bool:
-        # make end key incluse
+        # make offset incluse
         return self.get_onset() <= time <= self.get_offset()

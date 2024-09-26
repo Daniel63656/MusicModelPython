@@ -223,12 +223,12 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                     ET.SubElement(xml_note, "chord")
                 xml_pitch = ET.SubElement(xml_note, "pitch")
                 ET.SubElement(xml_pitch, "step").text = note._note_name.name
-                alter = note.get_alter()
+                alter = note.get_alteration()
                 if alter != 0:
                     ET.SubElement(xml_pitch, "alter").text = str(alter)
                 ET.SubElement(xml_pitch, "octave").text = str(note._octave)
                 if not grace:
-                    ET.SubElement(xml_note, "duration").text = str(to_division(note.get_duration()))
+                    ET.SubElement(xml_note, "duration").text = str(to_division(chord.get_duration()))
                 if note._next_tied:
                     ET.SubElement(xml_note, "tie", type="start")
                 if note._previous_tied:

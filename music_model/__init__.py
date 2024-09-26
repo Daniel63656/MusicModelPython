@@ -6,6 +6,10 @@ __all__ = [
     'OctaveShift', 'KeySignature', 'TimeSignature', 'BeamGroup', 'Tuplet', 'Measure', 'Site', 'Self'
 ]
 
+# cache often used fractions
+from fractions import Fraction
+ZERO = Fraction(0, 1)
+
 # import Self type regardless of python version
 import sys
 if sys.version_info >= (3, 11):

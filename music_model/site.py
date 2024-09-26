@@ -1,12 +1,13 @@
 from __future__ import annotations
 from sortedcontainers import SortedDict
+from music_model import ZERO
 from .abstract import Range
-from fractions import Fraction
 from .chord import Chord
 from .event import Event
 
 import typing as t
 if t.TYPE_CHECKING:
+    from fractions import Fraction
     from typing import Iterator, Optional
     from .staff import Staff
     from .tuplet import Tuplet
@@ -16,6 +17,12 @@ if t.TYPE_CHECKING:
 
 
 class Site(Range):
+    """
+    Base class for an ordered collection of elements (Tuplets, Chords and Rests), forming an independent temporal strand.
+
+    Attributes:
+    elements (SortedDict): A sorted dictionary of elements in the site, ordered by onset.
+    """
     def __init__(self):
         self._elements = SortedDict()
     
@@ -37,7 +44,7 @@ class Site(Range):
         """
         return self._elements[time]
     
-    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False, use_unfolded_time: bool=False) -> Iterator[ChordRest]:
+    def get_chords_and_rests(self, start: Fraction=None, end: Fraction=None, inclusive=(True, False), reverse: bool=False) -> Iterator[ChordRest]:
         """ Create an iterator of all chords and rests in a flattened view (this site and
             all child sites) between `start` and `end`.
 
@@ -103,6 +110,9 @@ class Site(Range):
         tuplet._onset = onset
 
     def __get_or_create_event(self, staff: Staff, onset: Fraction) -> Event:
+        """
+        Internal function used to get or create an event at a given onset and staff.
+        """
         if onset in staff._events:
             return staff._events[onset]
         event = Event(staff, onset)
@@ -111,11 +121,11 @@ class Site(Range):
     
     def get_onset(self) -> Fraction:
         if len(self._elements) == 0:
-            return Fraction(0, 1)
+            return ZERO
         self._elements[0].get_onset()
 
     def get_offset(self) -> Fraction:
         if len(self._elements) == 0:
-            return Fraction(0, 1)
+            return ZERO
         # don't recurse into child sites!
         return self._elements.values()[-1].get_offset()

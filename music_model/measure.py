@@ -1,6 +1,7 @@
 from __future__ import annotations
 from fractions import Fraction
 from .abstract import NavigableRange
+from music_model import ZERO
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -11,6 +12,14 @@ if t.TYPE_CHECKING:
 
 
 class Measure(NavigableRange):
+    """
+    Represents a measure in a musical score. Measures are the basic unit of time in music, and are saved as
+    continuous and navigable `Range`s of a `Part`.
+
+    Attributes:
+    part (Part): The parent part of the measure.
+    onset (Fraction): The onset of the measure.
+    """
     def __init__(self):
         self._part = None
         self._onset = None
@@ -30,7 +39,7 @@ class Measure(NavigableRange):
         if next_measure is not None:
             return next_measure.get_onset()
         # last measure, get length by checking all staffs of part
-        max_offset = Fraction(0, 1)
+        max_offset = ZERO
         for staff in self._part._staffs.values():
             if len(staff._events) > 0:
                 max_offset = max(max_offset, staff._events.values()[-1].get_offset())
@@ -38,13 +47,13 @@ class Measure(NavigableRange):
 
     def starts_repeat(self) -> bool:
         """
-        Returns: True if left barline has repeat symbol
+        Returns `True` if left barline has repeat symbol
         """
         return self._onset in self._part._score._repeat_starts
 
     def ends_repeat(self) -> bool:
         """
-        Returns: True if right barline has repeat symbol
+        Returns `True` if right barline has repeat symbol
         """
         return self.get_offset() in self._part._score._repeat_ends
 

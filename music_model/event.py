@@ -12,17 +12,20 @@ if t.TYPE_CHECKING:
 
 
 class Event(NavigableRange):
-    """ Storage container for chords and rests within a staff, sharing a common onset. Since this class
-        has no direct musical counterpart, it is only meant for internal use and can't be instantiated
-        without a parent staff. Offset depends on the elements within it.
+    """
+    Storage container for `ChordRest` objects within a `Staff` that share a common onset. Since this class
+    has no direct musical counterpart, it is only meant for internal use and can't be instantiated
+    as standalone object without a parent staff. Offset is determined implicitly by the elements within it.
+
+    Attributes:
+    staff (Staff): The parent staff of the event.
+    onset (Fraction): The onset of the event.
+    chord_rests (dict): A dictionary for storing `ChordRest` objects with their respective `Voice` as key.
     """
     def __init__(self, staff: Staff, onset: Fraction):
         self._staff = staff
         self._onset = onset
         self._chord_rests = {}  # mapped with Voice as key
-
-    def get_chords_and_rests(self) -> Iterable[ChordRest]:
-        return self._chord_rests.values()
 
     def get_staff(self) -> Staff:
         return self._staff
@@ -37,7 +40,7 @@ class Event(NavigableRange):
         return self._onset
         
     def get_offset(self) -> Fraction:
-        return max(key.get_offset() for key in self._chord_rests.values())
+        return max(cr.get_offset() for cr in self._chord_rests.values())
     
     def next(self) -> Optional[Self]:
         idx = self._staff._events.bisect_right(self.get_onset())

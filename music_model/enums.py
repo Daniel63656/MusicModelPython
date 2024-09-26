@@ -7,7 +7,7 @@ from . import Self
 
 class Accidental(Enum):
     """
-    An enumeration representing the different types of accidentals in music notation.
+    Represents the different types of accidentals in music notation.
     """
     SHARP = 1
     DOUBLE_SHARP = 2
@@ -26,12 +26,12 @@ class Accidental(Enum):
 
 class NoteName(Enum):
     """
-    An enumeration representing (English) musical note names with chromatic and diatonic indices.
+    Represents (English) musical note names with chromatic and diatonic indices.
 
-    The chromatic index represents the position of the note name in the chromatic scale, ranging
+    The `chromatic index` represents the position of the note name in the chromatic scale, ranging
     from C=0 to 11. It corresponds to the `value` of the enum member, e.g., NoteName.E has a chromatic index of 4.
 
-    The diatonic index represents the position of the note name in the diatonic scale (white piano keys), ranging
+    The `diatonic index` represents the position of the note name in the diatonic scale (white piano keys), ranging
     from C=0 to 6. It corresponds to the enum definition order, e.g., NoteName.E has a diatonic index of 2.
     
     Example Usage:
@@ -59,6 +59,9 @@ class NoteName(Enum):
  
 
 class ClefType(Enum):
+    """
+    Represents the different types of clefs in music notation.
+    """
     TREBLE = (2, NoteName.G, 4)
     BASS = (4, NoteName.F, 3)
     SOPRANO = (1, NoteName.C, 4)
@@ -72,7 +75,7 @@ class ClefType(Enum):
 
     def get_staff_line(self) -> int:
         """
-        counted staff-lines with the lowest being 1 and highest 5.
+        Returns staff line of the clef with the lowest line being 1 and highest line being 5.
         """
         return self.value[0]
     
@@ -87,12 +90,12 @@ _note_type_by_common_name = {}
 _note_type_by_base2_exponent = {}
 class NoteType(Enum):
     """
-    Enumeration representing symbolic note types such as 'whole' and 'quarter'.
+    Represents symbolic duration types such as 'whole' and 'quarter'.
 
     Attributes:
-        value (Fraction): nominal duration of the note type
-        base2_exponent (int): exponent used to raise 2 to obtain the nominal duration, e.g., 2**(-2) = 1/4, corresponding to 'quarter' type
-        common_name (str): name of the type used in the U.S. system
+    value (Fraction): Nominal duration of the note type.
+    base2_exponent (int): Exponent used to raise 2 to obtain the nominal duration, e.g., 2**(-2) = 1/4, corresponding to 'quarter' type.
+    common_name (str): Name of the type used in the U.S. system.
     """
     MAXIMA = Fraction(8, 1)
     LONG = Fraction(4, 1)
@@ -176,6 +179,9 @@ class NoteType(Enum):
 
 
 class Octavation(Enum):
+    """
+    Represents the different octavations an `OctaveShift` can have. Value describes the shift in pitch, measured in octaves.
+    """
     O8va = 1
     O8vb = -1
     O15ma = 2
@@ -191,13 +197,16 @@ class Octavation(Enum):
 
 
 class Stem(Enum):
+    """
+    Represents the different directions of stems in music notation.
+    """
     UP = 1
     DOWN = 0
 
 
 class Expression(Enum):
     """
-    Articulations and ornaments applied to (grace-) chords
+    Represents different types of musical expressions, applicable to chords and grace chords.
     """
     ACCENT = 0
     MARCATO = 1
@@ -210,6 +219,9 @@ class Expression(Enum):
 
 
 class Dynamics(Enum):
+    """
+    Represents different types of musical dynamics.
+    """
     MEZZO_PIANO = "mp"
     PIANO = "p"
     PIANISSIMO = "pp"
@@ -222,7 +234,7 @@ class Dynamics(Enum):
 
 class Instrument(Enum):
     """
-    Instrument according to MIDI standard
+    Instrument according to MIDI standard. Values are program numbers, which are used to select the instrument sound on a MIDI device.
     """
     ACOUSTIC_PIANO = 0
     BRIGHT_PIANO = 1

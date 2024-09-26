@@ -4,12 +4,13 @@ from typing import Any
  
 
 class ContinuousMap(SortedDict):
-    """ An ordered map that holds ranges that are continuous, meaning their end is implicitly determined by the start of the
-        next range or the maximal possible end point if no next range is present. Continuous ranges cover the key-space
-        without leaving gaps and without overlapping.
-        The value for the current range can be retrieved using []-notation, while get() will only return a value if it is
-        exactly present at that key.
-        Keys must be comparable.
+    """
+    An ordered dictionary that holds values representing continuous ranges. Each range starts at the specified key, 
+    and its end is implicitly determined by the start of the next range. These ranges cover the entire key space without gaps or overlaps.
+    Keys must be comparable.
+
+    For any given key, the value in effect can be retrieved using []-notation, while `get()` will only return a value if it is
+    exactly present at that key.
     """
 
     def __getitem__(self, key):
@@ -20,18 +21,19 @@ class ContinuousMap(SortedDict):
     
 
 class DiscontinuousMap(SortedDict):
-    """ An ordered map that holds ranges that are discontinuous, meaning a range might end earlier than the
-        next range starts. Or in other words, there can be gaps between discontinuous ranges. Therefore, the end of
-        a range must be explicitly defined. Ranges can not overlap.
-        The value for the current range (if present) can be retrieved using []-notation, while get() will only return a value if it is
-        exactly present at that key.
-        Keys must be comparable and values must implement the ```Range``` interface to define their interval in ```encloses()```
+    """
+    An ordered dictionary that holds discontinuous ranges, meaning there may be gaps between consecutive ranges. 
+    Each range must have an explicitly defined start and end, and ranges cannot overlap. Keys must be comparable and values must implement the `Range` interface.
+
+    For any given key, the value in effect (or None) can be retrieved using []-notation, while `get()` will only return a value if it is
+    exactly present at that key.
     """
     
-    # enforce type for values as map uses Range functions
     def __setitem__(self, key: Any, value: Range) -> None:
+        # enforce Range type for value and check if key matches the onset of the range
         if not isinstance(value, Range):
             raise TypeError("Values must be of type Range")
+        assert key == value.get_onset(), "Key must match the onset of the range"
         super().__setitem__(key, value)
 
     def __getitem__(self, key):
@@ -53,10 +55,12 @@ class DiscontinuousMap(SortedDict):
 
     
 class SafeDict(dict):
-    """ A dict that is auto initialized using a custom action if querried key does not exist.
-        factory: lambda mapping key to function
-        Example:    dict = SafeDict(lambda x: -x)
-                    dict[1]     # this creates the pair {1: -1}
+    """
+    A dictionary that is auto initializes values for querried, but non-existing keys using a custom function.
+
+    factory: lambda mapping key to function
+    Example:    dict = SafeDict(lambda x: -x)
+                dict[1]     # this creates the pair {1: -1}
     """
     def __init__(self, factory):
         self.factory = factory

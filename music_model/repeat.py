@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from sortedcontainers import SortedDict
 from fractions import Fraction
+from music_model import ZERO
 from .abstract import Range
 
 
@@ -67,7 +68,7 @@ class RepeatEnd(RepeatAction):
         idx = self._score._repeat_starts.bisect_left(self._onset)
         if idx > 0:     # idx > 0 if such an entry exists
             return self._score._repeat_starts.values()[idx - 1]._onset
-        return Fraction(0, 1)
+        return ZERO
 
 
 class ToCoda(RepeatAction):
@@ -156,7 +157,7 @@ class DaCapo(RepeatCommand):
         super().__init__(al)
 
     def jump(self) -> Fraction:
-        return Fraction(0, 1)
+        return ZERO
 
     def __str__(self):
         return f"D.C.{f' al {self._al}' if self._al else ''}"
@@ -193,7 +194,7 @@ class JumpIterator:
         >>>     current_time = jump[1]
         >>> print(f"{current_time} - {it.get_time()}")
     """
-    def __init__(self, score, start_time: Fraction = Fraction(0, 1)):
+    def __init__(self, score, start_time: Fraction = ZERO):
         """
         Initializes the JumpIterator.
 

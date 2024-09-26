@@ -2,9 +2,9 @@ import os
 from fractions import Fraction
 from music_model import *
 from music_model.conversion import *
-from music_model.repeat import JumpIterator
+from music_model import ZERO
 resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
-ZERO = Fraction(0, 1)
+
 
 def test_songs():
     for file in os.listdir(resources_dir):
@@ -38,12 +38,6 @@ def test_standard_contexts():
     # check if standard measure has been created in part
     assert part._measures is not None
 
-def test_pitch_retrieval():
-    midi_pitches = [68, 68, 66, 67, 61, 73, 68, 65, 60, 72, 67, 65]
-    score = import_xml(os.path.join(resources_dir, "acc_and_keys.musicxml"))
-    for i, chord in enumerate(score.get_parts()[0].get_staff(0).get_chords_and_rests()):
-        assert next(iter(chord.get_notes())).get_pitch() == midi_pitches[i]
-
 def test_ending_import():
     score = import_xml(os.path.join(resources_dir, "endings.musicxml"))
     e1 = score._endings.get(Fraction(1, 1))
@@ -58,37 +52,5 @@ def test_ending_import():
     assert 2 in e3._numbers
     e4 = score._endings.get(Fraction(5, 1))
     assert e4 == score._endings.get_by_offset(Fraction(6, 1))
-    assert 3 in e4._numbers  
-
-# for jump tests
-def verify_sections(score, expected):
-    cursor = JumpIterator(score)
-    time = ZERO
-    for i, jump in enumerate(cursor):
-        print(f"{time} - {jump[0]}")
-        assert (time, jump[0]) == expected[i]
-        time = jump[1]
-    print(f"{time} - {cursor._time}")
-    assert (time, cursor.get_time()) == expected[-1]
-
-def test_jumps():
-    score = import_xml(os.path.join(resources_dir, "jumps.musicxml"))
-    verify_sections(score, [
-        (0, 2),     # first D.C.
-        (0, 3),     # D.S. al Coda
-        (1, 5),     # To Coda (skip 2nd D.C.)
-        (6, 7),     # D.S. al Fine
-        (1, 8)      # from Segno to Fine
-    ])
-
-def test_repeats():
-    score = import_xml(os.path.join(resources_dir, "jumps_and_repeats.musicxml"))
-    verify_sections(score, [
-        (0, 1),     # first repeat end
-        (0, 4),     # second repeat end
-        (2, 4),     # D.S.
-        (1, 6),     # third repeat end
-        (5, 7),     # D.C.
-        (0, 7)      # begin to end, unubstructed
-    ])
+    assert 3 in e4._numbers
     

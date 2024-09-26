@@ -13,6 +13,9 @@ if t.TYPE_CHECKING:
     
 
 class Tuplet(Site, Element):
+    """
+    Tuplet class. Tuplets are both an `Element` and a `Site`, containing other elements themselves.
+    """
     def __init__(self, normal_count, normal_type, normal_dots, actual_count, actual_type=None, actual_dots=None) -> None:
         # call super constructors. count, type and dots together make a duration
         Site.__init__(self)

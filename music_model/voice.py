@@ -7,6 +7,13 @@ if t.TYPE_CHECKING:
 
 
 class Voice(Site):
+    """
+    Musical voice, owned by a part. Extends the `Site` class.
+
+    Attributes:
+    part (Part): The part the voice belongs to.
+    id (int): The index of the voice in the part collection, serving as unique identifier.
+    """
     def __init__(self):
         super().__init__()
         self._part = None

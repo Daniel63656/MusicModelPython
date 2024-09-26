@@ -12,6 +12,14 @@ if t.TYPE_CHECKING:
     
 
 class BeamGroup(Range):
+    """
+    A group of chords and rests that are beamed together. Beams can only encompass chords and rests of the same voice.
+
+    Attributes:
+    voice (Voice): The voice that the beam group belongs to.
+    grace_beam (bool): `True` if the beam group contains grace chords, `False` otherwise. Beam groups can't encompass both grace and non grace chords.
+    chord_rests (SortedList): A sorted list of the chords and rests contained in the beam group.
+    """
     def __init__(self) -> None:
         self._voice = None
         self._grace_beam = False

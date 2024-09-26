@@ -1,6 +1,7 @@
 from __future__ import annotations
 from .abstract import NavigableRange, ChordRest
 from .enums import NoteType, Stem
+from music_model import ZERO
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -16,18 +17,31 @@ if t.TYPE_CHECKING:
 
 
 class Chord(ChordRest):
+    """
+    A class that represents a collection of `Note`s played simultaneously, sharing the same `Voice`, `Staff`, `Stem` and duration.
+
+    Inherits:
+    site (Site): The owning `Site` of the chord.
+    event (Event): The owning `Event` of the chord.
+    beam_group (BeamGroup): The `BeamGroup` that contains this chord (optional).
+    note_type (NoteType): The duration type of the element. Together with `dots`, this specifies nominal duration.
+    dots (int): The number of dots.
+    fermata (bool): Whether the chord has a fermata.
+
+    Attributes:
+    notes (set[Note]): The notes that belong to the chord.
+    stem (Stem): The stem of the chord (optional).
+    grace_chords (list[GraceChord]): The grace chords that are played before the chord.
+    expressions (set[Expression]): The expressions that are applied to the chord.
+    """
     def __init__(self, note_type: NoteType, dots: int = 0, stem: Stem = None):
         super().__init__(note_type, dots)
         if note_type is NoteType.WHOLE and stem is not None:
             raise ValueError("chords with NoteType 'whole' can't have a stem.")
-        self._grace_chords = []
-        self._expressions = set()
         self._notes = set()
         self._stem = stem
-
-    def add_note(self, note: Note):
-        self._notes.add(note)
-        note._chord = self
+        self._grace_chords = []
+        self._expressions = set()
 
     def get_notes(self) -> Iterable[Note]:
         return self._notes
@@ -38,11 +52,6 @@ class Chord(ChordRest):
     def get_grace_chords(self) -> Iterable[GraceChord]:
         return self._grace_chords
 
-    def add_grace_chord(self, grace_chord: GraceChord):
-        self._grace_chords.append(grace_chord)
-        grace_chord._chord = self
-        grace_chord._idx = len(self._grace_chords)
-
     def add_expression(self, expression: Expression):
         self._expressions.add(expression)
 
@@ -50,13 +59,25 @@ class Chord(ChordRest):
         return self._expressions
 
     def get_duration(self) -> Fraction:
+        """
+        Get the real duration of the chord, taking tuplets into account.
+        """
         duration = self._note_type.get_value(self._dots)
         site = self._site
-        # can't use isinstance here becuase this would cause circular dependencies!
+        # can't use isinstance here becuase this would cause circular dependency!
         while hasattr(site, "_site"):
             duration *= site._time_mod
             site = site._site
         return duration
+    
+    def add_note(self, note: Note):
+        self._notes.add(note)
+        note._chord = self
+
+    def add_grace_chord(self, grace_chord: GraceChord):
+        self._grace_chords.append(grace_chord)
+        grace_chord._chord = self
+        grace_chord._idx = len(self._grace_chords)
     
     def __str__(self):
         dots_str = '.' * self._dots
@@ -65,6 +86,20 @@ class Chord(ChordRest):
     
 
 class GraceChord(NavigableRange):
+    """
+    A class that represents a collection of `Note`s played together as grace notes.
+
+    Attributes:
+    chord (Chord): The owning `Chord` of the grace chord.
+    idx (int): The index of the grace chord in the owning chord's list, used as unique identifier and for navigation.
+    note_type (NoteType): The duration type of the element. Together with `dots`, this specifies nominal duration.
+    dots (int): The number of dots.
+    stem (Stem): The stem of the grace chord (optional).
+    beam_group (BeamGroup): The `BeamGroup` that contains this grace chord (optional).
+    notes (set[Note]): The notes that belong to the grace chord.
+    expressions (set[Expression]): The expressions that are applied to the grace chord.
+    """
+        
     def __init__(self, note_type: NoteType, dots: int = 0, stem: Stem = None):
         if note_type is NoteType.WHOLE and stem is not None:
             raise ValueError("chords with NoteType 'whole' can't have a stem.")
@@ -72,11 +107,17 @@ class GraceChord(NavigableRange):
         self._idx = None
         self._note_type = note_type
         self._dots = dots
-        self._expressions = set()
-        self._notes = set()
         self._stem = stem
         self._beam_group = None
+        self._notes = set()
+        self._expressions = set()
 
+    def get_chord(self) -> Chord:
+        return self._chord
+    
+    def get_index(self) -> int:
+        return self._idx
+    
     def get_note_type(self) -> NoteType:
         return self._note_type
     
@@ -86,11 +127,11 @@ class GraceChord(NavigableRange):
     def get_stem(self) -> Stem:
         return self._stem
     
+    def get_beam_group(self) -> BeamGroup:
+        return self._beam_group
+    
     def get_notes(self) -> Iterable[Note]:
         return self._notes
-    
-    def add_expression(self, expression: Expression):
-        self._expressions.add(expression)
 
     def get_expression(self) -> Iterable[Expression]:
         return self._expressions
@@ -104,14 +145,21 @@ class GraceChord(NavigableRange):
     def get_voice(self) -> Voice:
         return self._chord.get_voice()
     
-    def get_beam_group(self) -> BeamGroup:
-        return self._beam_group
-    
     def get_onset(self) -> Fraction:
         return self._chord.get_onset()
         
     def get_offset(self) -> Fraction:
-        return Fraction(0, 1)
+        return self._chord.get_onset()
+    
+    def get_duration(self) -> Fraction:
+        return ZERO
+    
+    def add_note(self, note: Note):
+        self._notes.add(note)
+        note._chord = self
+
+    def add_expression(self, expression: Expression):
+        self._expressions.add(expression)
     
     def next(self) -> Optional[Self]:
         if self._idx + 1 >= len(self._chord._grace_chords):
@@ -122,13 +170,6 @@ class GraceChord(NavigableRange):
         if self._idx < 1:
             return None
         return self._chord._grace_chords[self._idx - 1]
-    
-    def get_index(self) -> int:
-        return self._idx
-
-    def add_note(self, note: Note):
-        self._notes.add(note)
-        note._chord = self
     
     def __str__(self):
         dots_str = '.' * self._dots

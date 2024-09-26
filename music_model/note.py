@@ -1,14 +1,29 @@
 from __future__ import annotations
-from .abstract import Range
+from .enums import NoteName
 
 import typing as t
 if t.TYPE_CHECKING:
     from typing import Optional
-    from fractions import Fraction
-    from .enums import NoteName, Accidental
+    from .chord import Chord
+    from .enums import Accidental, KeySignature
 
 
-class Note(Range):
+class Note():
+    """
+    Musical note, representing a pitch in a chord.
+    
+    Notes are specified by both an abolute pitch as well as a natural
+    pitch (`NoteName` and octave). They can also have an `Accidental`, and can be tied to other notes.
+
+    Attributes:
+    chord (Chord): The chord the note belongs to.
+    note_name (NoteName): The name of the note.
+    octave (int): The octave of the note.
+    pitch (int): The absolute pitch of the note.
+    accidental (Accidental): The accidental of the note (optional).
+    previous_tied (Note): The previous note tied to this one (optional).
+    next_tied (Note): The next note tied to this one (optional).
+    """
     def __init__(self, note_name: NoteName, octave: int, pitch: int, accidental: Accidental=None):
         self._chord = None
         self._note_name = note_name
@@ -17,6 +32,9 @@ class Note(Range):
         self._accidental = accidental
         self._previous_tied = None
         self._next_tied = None
+
+    def get_chord(self) -> Chord:
+        return self._chord
 
     def get_note_name(self) -> NoteName:
         return self._note_name
@@ -30,29 +48,69 @@ class Note(Range):
     def get_accidental(self) -> Accidental:
         return self._accidental
     
+    def get_alteration(self) -> int:
+        """
+        Returns difference between natural and absolute pitch.
+        """
+        return self._pitch - (self._octave+1)*12 - self._note_name.value
+    
     def get_previous_tied(self) -> Optional[Note]:
         return self._previous_tied
     
     def get_next_tied(self) -> Optional[Note]:
         return self._next_tied
-
-    def get_alter(self) -> int:
-        return self._pitch - (self._octave+1)*12 - self._note_name.value
     
-    def get_onset(self) -> Fraction:
-        return self._chord.get_onset()
+    def is_tie_start(self) -> bool:
+        return self._previous_tied is None and self._next_tied is not None
     
-    def get_offset(self) -> Fraction:
-        return self.get_onset() + self._chord.get_duration()
+    def is_tie_end(self) -> bool:
+        return self._previous_tied is not None and self._next_tied is None
     
     @staticmethod
     def tie_notes(note1: Note, note2: Note):
         if note1._pitch != note2._pitch:
-            raise RuntimeError("Can't tie notes with different pitches.")
+            raise ValueError("Can't tie notes with different pitch values.")
         if note1.get_onset() > note2.get_onset():
             note1, note2 = note2, note1
         note1._next_tied = note2
         note2._previous_tied = note1
+
+    def untie_with_next(self):
+        if self._next_tied is None:
+            return
+        self._next_tied._previous_tied = None
+        self._next_tied = None
+
+    def untie_with_previous(self):
+        if self._previous_tied is None:
+            return
+        self._previous_tied._next_tied = None
+        self._previous_tied = None
+
+    def untie(self):
+        self.untie_with_next()
+        self.untie_with_previous()
+
+    @staticmethod
+    def natural_pitch(key_signature: KeySignature, pitch: int, flatten: bool=False):
+        alteration = 0
+        # make pitch natural in this key
+        if not key_signature.pitch_is_natural(pitch):
+            if flatten:
+                alteration = -1
+            else:
+                alteration = 1
+        # account for accidentals of key signature (function of sharp/flat/natural can be different symbol in given key)
+        if key_signature._fifths > 0:
+            if key_signature.pitch_has_key_accidental(pitch - alteration - 1):
+                alteration += 1
+        elif key_signature._fifths < 0:
+            if key_signature.pitch_has_key_accidental(pitch - alteration + 1):
+                alteration -= 1
+        # calculate octave and name
+        octave = ((pitch - alteration) // 12) - 1
+        name = NoteName((pitch - alteration) % 12)
+        return name, octave, alteration
     
     def __str__(self):
         if self._accidental is None:
