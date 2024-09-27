@@ -34,8 +34,8 @@ class Chord(ChordRest):
     grace_chords (list[GraceChord]): The grace chords that are played before the chord.
     expressions (set[Expression]): The expressions that are applied to the chord.
     """
-    def __init__(self, note_type: NoteType, dots: int = 0, stem: Stem = None):
-        super().__init__(note_type, dots)
+    def __init__(self, note_type: NoteType, dots: int=0, stem: Stem=None, visible: bool=True):
+        super().__init__(note_type, dots, visible)
         if note_type is NoteType.WHOLE and stem is not None:
             raise ValueError("chords with NoteType 'whole' can't have a stem.")
         self._notes = set()

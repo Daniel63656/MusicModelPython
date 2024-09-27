@@ -143,12 +143,14 @@ class ChordRest(Element, ABC):
     Attributes:
     event (Event): The owning `Event` of the chord or rest.
     beam_group (BeamGroup): The `BeamGroup` that contains this chord or rest (optional).
+    visible (bool): Whether the chord or rest is visible. Defaults to `True`.
     fermata (bool): Whether the chord or rest has a fermata.
     """
-    def __init__(self, note_type, dots):
+    def __init__(self, note_type, dots, visible=True):
         super().__init__(note_type, dots)
         self._event = None
         self._beam_group = None
+        self._visible = visible
         self._fermata = False
 
     def get_staff(self) -> Staff:
@@ -171,3 +173,6 @@ class ChordRest(Element, ABC):
         
     def get_offset(self) -> Fraction:
         return self._event._onset + self.get_duration()
+    
+    def set_visibility(self, visible: bool):
+        self._visible = visible

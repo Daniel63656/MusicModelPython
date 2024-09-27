@@ -1,7 +1,6 @@
 from __future__ import annotations
-from sortedcontainers import SortedDict
 from fractions import Fraction
-from .collection import ContinuousMap, DiscontinuousMap
+from .collection import SortedMap, ContinuousMap, DiscontinuousMap
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -31,7 +30,7 @@ class Staff():
     def __init__(self):
         self._part = None
         self._id = None
-        self._events = SortedDict()
+        self._events = SortedMap()
         self._clefs = ContinuousMap()
         self._key_signatures = ContinuousMap()
         self._time_signatures = ContinuousMap()

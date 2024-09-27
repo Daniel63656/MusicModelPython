@@ -79,12 +79,16 @@ def _import_xml(tree) -> Score:
 
         def process_clef(root):
             # clef is different, here no number means first staff
-            number = root.attrib.get("number")
             staff_number = 0
-            clef_type = None
-            octave_shift = 0
+            number = root.attrib.get("number")
             if number is not None:
                 staff_number = int(number) - 1
+            after_barline = None
+            after_bl = root.attrib.get("after-barline")
+            if after_bl is not None:
+                after_barline = True if after_bl == "yes" else False
+            clef_type = None
+            octave_shift = 0
             for elem in root:
                 if elem.tag == "sign":
                     clef_name = elem.text
@@ -119,7 +123,7 @@ def _import_xml(tree) -> Score:
                     octave_shift = int(elem.text)
             if clef_type is None:
                 raise ValueError("Mandatory attribute 'sign' missing from clef definition.")
-            part._staffs[staff_number].insert_clef(cursor, Clef(clef_type, octave_shift))
+            part._staffs[staff_number].insert_clef(cursor, Clef(clef_type, octave_shift, after_barline))
                     
         def tie_if_needed(note, tie_start, tie_stop):
             if tie_stop:
@@ -166,7 +170,7 @@ def _import_xml(tree) -> Score:
             nonlocal cursor
             nonlocal site
             nonlocal grace_beam
-            invisible = root.attrib.get("print-object") == "no"
+            visible = False if root.attrib.get("print-object") == "no" else True
             note_name = None
             note_type = None
             octave = None
@@ -301,7 +305,7 @@ def _import_xml(tree) -> Score:
                 if note_type is None:
                     # measure rest - use XML specified duration and set to standard NoteType (WHOLE)
                     assert is_rest, "Expected measure rest here"
-                    site.insert_chord_or_rest(current_onset, Rest(NoteType.WHOLE, 0, measure_duration=duration, invisible=invisible), staff)
+                    site.insert_chord_or_rest(current_onset, Rest(NoteType.WHOLE, 0, measure_duration=duration, visible=visible), staff)
                     cursor += duration
                 else:
                     # calculate duration yourself because musicxml's is wrong for nested tuplets
@@ -317,7 +321,7 @@ def _import_xml(tree) -> Score:
                     else:
                         chord_rest = None
                         if is_rest:
-                            chord_rest = Rest(note_type, dots, invisible=invisible)
+                            chord_rest = Rest(note_type, dots, visible=visible)
                             site.insert_chord_or_rest(current_onset, chord_rest, staff)
                         else:
                             note = Note(note_name, octave, pitch, accidental)

@@ -25,7 +25,7 @@ class Rest(ChordRest):
     In case of a measure rest, this duration is different from the one defined by the `NoteType` and dots.
     is_measure_rest (bool): Whether the rest represents a full measure. In this case, duration type is 'whole' and dots are 0. 
     """
-    def __init__(self, note_type: NoteType, dots: int, measure_duration: Fraction = None, invisible=False): # TODO how to handle invisibility
+    def __init__(self, note_type: NoteType, dots: int, measure_duration: Fraction = None, visible=True):
         if measure_duration is None:
             self._nominal_duration = note_type.get_value(dots)
             self._is_measure_rest = False
@@ -34,8 +34,7 @@ class Rest(ChordRest):
             self._is_measure_rest = True
             note_type = NoteType.WHOLE
             dots = 0
-        self._invisible = invisible
-        super().__init__(note_type, dots)
+        super().__init__(note_type, dots, visible)
 
     def get_duration(self) -> Fraction:
         # override Element.get_duration() to use nominal duration variable instead

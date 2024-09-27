@@ -112,9 +112,34 @@ def test_octave_shifts():
     shifts = list(staff.get_octave_shifts())
     check_shifts(shifts, staff)
 
-# TODO test various clef imports
+def test_clef_import():
+    # MuseScore strangely does not IMPORT treble 15mb clefs, so don't be surprised when visualizing
+    # they are imported, exported and tested though
+    score = import_xml(os.path.join(resources_dir, "various_clefs.musicxml"))
+    staff = score.get_parts()[0].get_staff(0)
+    assert staff.get_clef(ZERO).equals(Clef(ClefType.TREBLE, octave_shift=1))
+    assert staff.get_clef(Fraction(1, 4)).equals(Clef(ClefType.TREBLE, octave_shift=2))
+    assert staff.get_clef(Fraction(2, 4)).equals(Clef(ClefType.TREBLE, octave_shift=-1))
+    assert staff.get_clef(Fraction(3, 4)).equals(Clef(ClefType.TREBLE, octave_shift=-2))
+    assert staff.get_clef(Fraction(1, 1)).equals(Clef(ClefType.TREBLE))
+    assert staff.get_clef(Fraction(8, 4)).equals(Clef(ClefType.SOPRANO))
+    assert staff.get_clef(Fraction(9, 4)).equals(Clef(ClefType.MEZZO_SOPRANO))
+    assert staff.get_clef(Fraction(10, 4)).equals(Clef(ClefType.ALTO))
+    assert staff.get_clef(Fraction(11, 4)).equals(Clef(ClefType.TENOR))
+    assert staff.get_clef(Fraction(12, 4)).equals(Clef(ClefType.BARITONE))
+    staff = score.get_parts()[0].get_staff(1)
+    assert staff.get_clef(ZERO).equals(Clef(ClefType.BASS, octave_shift=1))
+    assert staff.get_clef(Fraction(1, 4)).equals(Clef(ClefType.BASS, octave_shift=2))
+    assert staff.get_clef(Fraction(2, 4)).equals(Clef(ClefType.BASS, octave_shift=-1))
+    assert staff.get_clef(Fraction(3, 4)).equals(Clef(ClefType.BASS, octave_shift=-2))
+    assert staff.get_clef(Fraction(1, 1)).equals(Clef(ClefType.BASS))
+    # test 'before-barline' attribute
+    assert score.get_parts()[0].get_staff(0).get_clef(Fraction(1, 1))._after_barline == None
+    assert score.get_parts()[0].get_staff(1).get_clef(Fraction(1, 1))._after_barline == True
+    assert score.get_parts()[0].get_staff(0).get_clef(Fraction(2, 1))._after_barline == True
+    assert score.get_parts()[0].get_staff(0).get_clef(Fraction(3, 1))._after_barline == True
 
-def test_dynamic_import():
+def test_dynamics_import():
     score = import_xml(os.path.join(resources_dir, "dynamics_and_fermatas.musicxml"))
     staff = score.get_parts()[0].get_staff(0)
     assert len(staff._dynamics) == 4

@@ -1,9 +1,51 @@
 from sortedcontainers import SortedDict
 from .abstract import Range
 from typing import Any
+
+
+class SortedMap(SortedDict):
+    def higher_entry(self, key):
+        """
+        Return the smallest value with a key strictly greater than 'key' or None if no such value exists.
+        """
+        index = self.bisect_right(key)
+        if index < len(self):
+            return self.keys()[index], super().__getitem__(self.keys()[index])
+        return None
+
+    def ceiling_entry(self, key):
+        """
+        Return the smallest value with a key greater than or equal to 'key' or None if no such value exists.
+        """
+        # check if exact value exists
+        value = self.get(key)
+        if value is not None:
+            return key, value
+        # if the key doesn't exist, fallback to the first key greater than the input key
+        return self.higher_value(key)
+    
+    def lower_entry(self, key):
+        """
+        Return the largest value with a key strictly less than 'key' or None if no such value exists.
+        """
+        index = self.bisect_left(key) - 1
+        if index >= 0:
+            return self.keys()[index], super().__getitem__(self.keys()[index])
+        return None
+
+    def floor_entry(self, key):
+        """
+        Return the largest value with a key less than or equal to 'key' or None if no such value exists.
+        """
+        # check if exact value exists
+        value = self.get(key)
+        if value is not None:
+            return key, value
+        # if the key doesn't exist, fallback to the largest key smaller than the input key
+        return self.lower_value(key)
  
 
-class ContinuousMap(SortedDict):
+class ContinuousMap(SortedMap):
     """
     An ordered dictionary that holds values representing continuous ranges. Each range starts at the specified key, 
     and its end is implicitly determined by the start of the next range. These ranges cover the entire key space without gaps or overlaps.
@@ -34,6 +76,13 @@ class DiscontinuousMap(SortedDict):
         if not isinstance(value, Range):
             raise TypeError("Values must be of type Range")
         assert key == value.get_onset(), "Key must match the onset of the range"
+        # check for overlaps with higher/lower entry
+        higher = self.higher_value(key)
+        if higher is not None:
+            assert not value.encloses(higher.get_onset()), "New range overlaps with existing range"
+        lower = self.lower_value(key)
+        if lower is not None:
+            assert not lower.encloses(key), "New range overlaps with existing range"
         super().__setitem__(key, value)
 
     def __getitem__(self, key):
@@ -43,6 +92,46 @@ class DiscontinuousMap(SortedDict):
             if value.encloses(key):
                 return value
         return None
+    
+    def higher_value(self, key):
+        """
+        Return the smallest value with a key strictly greater than 'key' or None if no such value exists.
+        """
+        index = self.bisect_right(key)
+        if index < len(self):
+            return super().__getitem__(self.keys()[index])
+        return None
+
+    def ceiling_value(self, key):
+        """
+        Return the smallest value with a key greater than or equal to 'key' or None if no such value exists.
+        """
+        # check if exact value exists
+        value = self.get(key)
+        if value is not None:
+            return value
+        # if the key doesn't exist, fallback to the first key greater than the input key
+        return self.higher_value(key)
+    
+    def lower_value(self, key):
+        """
+        Return the largest value with a key strictly less than 'key' or None if no such value exists.
+        """
+        index = self.bisect_left(key) - 1
+        if index >= 0:
+            return super().__getitem__(self.keys()[index])
+        return None
+
+    def floor_value(self, key):
+        """
+        Return the largest value with a key less than or equal to 'key' or None if no such value exists.
+        """
+        # check if exact value exists
+        value = self.get(key)
+        if value is not None:
+            return value
+        # if the key doesn't exist, fallback to the largest key smaller than the input key
+        return self.lower_value(key)
     
     def get_by_offset(self, key):
         """ Returns the range if it has an offset at the given key, otherwise returns None. """

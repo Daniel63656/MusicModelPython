@@ -1,8 +1,7 @@
 from __future__ import annotations
 import warnings
 from music_model import ZERO
-from sortedcontainers import SortedDict
-from .collection import DiscontinuousMap
+from .collection import SortedMap, DiscontinuousMap
 from .abstract import Range
 from .measure import Measure
 from .repeat import RepeatStart, RepeatEnd, Coda, Segno, ToCoda, Fine, Ending
@@ -35,14 +34,14 @@ class Score(Range):
         self._parts = []
         # repeat related
         # repeat marks (points to jump to but don't initiate jumps itself)
-        self._repeat_starts = SortedDict()
-        self._segnos = SortedDict()
-        self._codas = SortedDict()
+        self._repeat_starts = SortedMap()
+        self._segnos = SortedMap()
+        self._codas = SortedMap()
         # repeat commands
-        self._repeat_ends = SortedDict()
-        self._to_codas = SortedDict()
-        self._fines = SortedDict()  # TODO restrict to one?
-        self._repeat_commands = SortedDict()    # only allows one command at a time
+        self._repeat_ends = SortedMap()
+        self._to_codas = SortedMap()
+        self._fines = SortedMap()  # TODO restrict to one?
+        self._repeat_commands = SortedMap()    # only allows one command at a time
         # endings can act as both repeat marks and commands
         self._endings = DiscontinuousMap()
 

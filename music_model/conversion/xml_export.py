@@ -151,12 +151,12 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                     if len(tuplets) > 1:
                         xml_actual = ET.SubElement(xml_tuplet, "tuplet-actual")
                         ET.SubElement(xml_actual, "tuplet-number").text = str(tuplet._actual_count)
-                        ET.SubElement(xml_actual, "tuplet-type").text = tuplet._actual_type.common_name
+                        ET.SubElement(xml_actual, "tuplet-type").text = tuplet._actual_type._common_name
                         for _ in range(tuplet._actual_dots):
                             ET.SubElement(xml_actual, "tuplet-dot")
                         xml_normal = ET.SubElement(xml_tuplet, "tuplet-normal")
                         ET.SubElement(xml_normal, "tuplet-number").text = str(tuplet._normal_count)
-                        ET.SubElement(xml_normal, "tuplet-type").text = tuplet._note_type.common_name
+                        ET.SubElement(xml_normal, "tuplet-type").text = tuplet._note_type._common_name
                         for _ in range(tuplet._dots):
                             ET.SubElement(xml_normal, "tuplet-dot")
                 # tuplet end
@@ -168,7 +168,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
             beam_group = chord_rest.get_beam_group()
             if beam_group and beam_group.get_chords_and_rests()[0] == chord_rest:
                 chord_rests = beam_group.get_chords_and_rests()
-                numbers = [-chord_rest._note_type.base2_exponent - 2 for chord_rest in chord_rests]
+                numbers = [-chord_rest._note_type._base2_exponent - 2 for chord_rest in chord_rests]
                 for i, number in enumerate(numbers):
                     info = []
                     for n in range(number):
@@ -190,7 +190,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
         def create_rest(xml_measure, rest):
             create_beam_info_if_necessary(rest)
             xml_note = ET.SubElement(xml_measure, "note")
-            if rest._invisible:
+            if not rest._visible:
                 xml_note.set("print-object", "no")
             if rest._is_measure_rest:
                 ET.SubElement(xml_note, "rest", measure="yes")
@@ -200,7 +200,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                 ET.SubElement(xml_note, "rest", measure="yes")
                 ET.SubElement(xml_note, "duration").text = str(to_division(rest.get_duration()))
                 ET.SubElement(xml_note, "voice").text = str(rest.get_voice()._id)
-                ET.SubElement(xml_note, "type").text = rest._note_type.common_name
+                ET.SubElement(xml_note, "type").text = rest._note_type._common_name
                 for _ in range(rest._dots):
                     ET.SubElement(xml_note, "dot")
                 create_time_modification_if_necessary(xml_note, rest)
@@ -235,7 +235,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                 if note._previous_tied:
                     ET.SubElement(xml_note, "tie", type="stop")
                 ET.SubElement(xml_note, "voice").text = str(note._chord.get_voice()._id)
-                ET.SubElement(xml_note, "type").text = note._chord._note_type.common_name
+                ET.SubElement(xml_note, "type").text = note._chord._note_type._common_name
                 for _ in range(note._chord._dots):
                     ET.SubElement(xml_note, "dot")
                 if note._accidental:

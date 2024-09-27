@@ -1,6 +1,6 @@
 from __future__ import annotations
-from sortedcontainers import SortedDict
 from music_model import ZERO
+from .collection import SortedMap
 from .abstract import Range
 from .chord import Chord
 from .event import Event
@@ -26,7 +26,7 @@ class Site(Range):
     def __init__(self):
         # this collection would be owned by Voice and Tuplet to make Site an Interface in other languages.
         # As Python allows multiple inheritance, may as well use it here for simplicity.
-        self._elements = SortedDict()
+        self._elements = SortedMap()
     
     def get_elements(self, start: Fraction=None, end: Fraction=None, inclusive=(True, True), reverse: bool=False) -> Iterator[Element]:
         """ Create an iterator of directly owned elements (Tuplets, Chords and Rests)

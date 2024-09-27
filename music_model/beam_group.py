@@ -36,7 +36,7 @@ class BeamGroup(Range):
         else:
             assert chord_rest.get_voice() == self._voice, "Beamed chords and rests must share the same voice."
             assert isinstance(chord_rest, GraceChord) == self._grace_beam, "Beams can't encompass both grace and non grace chords."
-        assert chord_rest._note_type.base2_exponent < -2, "Can't beam chords and rests of this NoteType."
+        assert chord_rest._note_type._base2_exponent < -2, "Can't beam chords and rests of this NoteType."
         self._chord_rests.add(chord_rest)
         chord_rest._beam_group = self
 

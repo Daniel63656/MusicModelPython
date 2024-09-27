@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from sortedcontainers import SortedDict
 from fractions import Fraction
 from music_model import ZERO
 from .abstract import Range
@@ -64,11 +63,10 @@ class RepeatEnd(RepeatAction):
         self._iterations = 2
 
     def jump(self) -> Fraction:
-        # jump to closest prior repeat start by finding lower entry. If None, return begin of score
-        idx = self._score._repeat_starts.bisect_left(self._onset)
-        if idx > 0:     # idx > 0 if such an entry exists
-            return self._score._repeat_starts.values()[idx - 1]._onset
-        return ZERO
+        entry = self._score._repeat_starts.lower_entry(self._onset)
+        if entry is None:
+            return ZERO
+        return entry[0]
 
 
 class ToCoda(RepeatAction):
@@ -77,10 +75,10 @@ class ToCoda(RepeatAction):
 
     def jump(self) -> Fraction:
         # jump to next coda by finding higher entry. If None, throw error
-        idx = self._score._codas.bisect_right(self._onset)
-        if idx < len(self._score._codas):
-            return self._score._codas.values()[idx]._onset
-        raise ValueError("No Coda found to jump to.")
+        entry = self._score._codas.higher_entry(self._onset)
+        if entry is None:
+            raise ValueError("No Coda found to jump to.")
+        return entry[0]
     
     def __str__(self):
         return "To Coda"
@@ -136,17 +134,16 @@ class RepeatCommand(RepeatAction):
             return self
         if self._al == 'Fine':
             # jump to fine by finding higher entry. If None, throw error
-            idx = self._score._fines.bisect_right(self._onset)
-            if idx < len(self._score._fines):
-                return self._score._fines.values()[idx]
-            raise ValueError("Fine not found.")
+            entry = self._score._fines.higher_entry(self._onset)
+            if entry is None:
+                raise ValueError("Fine not found.")
+            return entry[1]
         if self._al == 'Coda':
             # jump to next ToCoda by finding higher entry. If None, throw error
-            idx = self._score._to_codas.bisect_right(self._onset)
-            if idx < len(self._score._to_codas):
-                return self._score._to_codas.values()[idx]
-            # TODO maybe return self instead?
-            raise ValueError("No ToCoda destination found.")
+            entry = self._score._to_codas.higher_entry(self._onset)
+            if entry is None:
+                raise ValueError("No ToCoda destination found.")
+            return entry[1]
 
     def __str__(self):
         return f"{self.prefix}{f' al {self._al}' if self._al else ''}"
@@ -169,11 +166,10 @@ class DalSegno(RepeatCommand):
 
     def jump(self) -> Fraction:
         #TODO what if Segno lies in the future?
-        # jump to closest prior Segno by finding lower entry. If None, throw error
-        idx = self._score._segnos.bisect_left(self._onset)
-        if idx > 0:     # idx > 0 if such an entry exists
-            return self._score._segnos.values()[idx - 1]._onset
-        raise ValueError("No Segno found to jump to.")
+        entry = self._score._segnos.lower_entry(self._onset)
+        if entry is None:
+            raise ValueError("No Segno found to jump to.")
+        return entry[0]
     
     def __str__(self):
         return f"D.S.{f' al {self._al}' if self._al else ''}"
@@ -279,34 +275,3 @@ class JumpIterator:
         Note that due to the presence of `Fine`, this value might differ from `Score.get_offset()`.
         """
         return self._time
-
-
-
-
-
-
-
-# TODO preprocessed but cached range for repeats. Necessary?
-class Repeat(Range):
-    """
-    Class to model a repetition inclusive different endings (volta brackets). Onset and offset describe the whole range
-    inclusive endings.
-            1,2___3____4_____,
-      |:    |    :|   :|     |
-    onset   e1    e2   e3  offset        where endings = {(e1 -> 2), (e2 -> 1), (e3 -> 1)}
-    """
-    def __init__(self, onset: Fraction, offset: Fraction):
-        self._score = None
-        self._onset = onset
-        self._offset = offset
-        # ending's offset is equal to the next ending's onset or to repetition offset if last ending
-        self._endings = SortedDict()
-    
-    def add_ending(self, onset: Fraction, count: int=1):
-        self._endings[onset] = count
-
-    def get_onset(self) -> Fraction:
-        return self._onset
-        
-    def get_offset(self) -> Fraction:
-        return self._offset

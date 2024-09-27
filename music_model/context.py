@@ -10,18 +10,20 @@ class Clef():
     clef_type (ClefType): The type of the clef (G, F, C, etc.)
     octave (int): The octave of the clef. Can be different from the standard octave for G and F clefs.
     """
-    def __init__(self, clef_type: ClefType, octave_shift: int=0):
+    def __init__(self, clef_type: ClefType, octave_shift: int=0, after_barline: bool=None):
         """
         Initialize the clef.
 
         Parameters:
         clef_type (ClefType): The type of the clef (G, F, C, etc.)
-        octave_shift (int): The shift in octave relative to the standard octave of the `ClefType`.
+        octave_shift (int): The shift in octave relative to the standard octave of the `ClefType` (optional).
+        after_barline (bool): Whether the clef is placed after a barline (optional)
         """
         self._clef_type = clef_type
         if octave_shift != 0 and clef_type != ClefType.TREBLE and clef_type != ClefType.BASS:
             raise ValueError("Only G and F clefs can have octave variations.")
         self._octave = clef_type.value[2] + octave_shift if clef_type.value[2] is not None else None
+        self._after_barline = after_barline
         self._C0_reference_line = None
         if clef_type.value[1] is not None:
             self._C0_reference_line = (clef_type.value[0] - 1) * 2 - clef_type.value[1].get_diatonic_index() - self._octave * 7

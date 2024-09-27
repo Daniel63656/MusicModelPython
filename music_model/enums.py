@@ -112,10 +112,10 @@ class NoteType(Enum):
 
     def __init__(self, value: Fraction):
         # value is already set in __new__ but must be parameter of __init__
-        self.base2_exponent = int(round(math.log(float(value)) / (math.log(2) + 1e-10)))
-        self.common_name = self.__common_name(value)
-        _note_type_by_common_name[self.common_name] = self
-        _note_type_by_base2_exponent[self.base2_exponent] = self
+        self._base2_exponent = int(round(math.log(float(value)) / (math.log(2) + 1e-10)))
+        self._common_name = self.__common_name(value)
+        _note_type_by_common_name[self._common_name] = self
+        _note_type_by_base2_exponent[self._base2_exponent] = self
 
     def __common_name(self, value: Fraction):
         if value.denominator == 1:
@@ -139,6 +139,17 @@ class NoteType(Enum):
             return "32nd"
         else:
             return f"{value.denominator}th"
+
+    def get_value(self, dots: int=0) -> Fraction:
+        if dots == 0:
+            return self.value
+        return self.value * ((Fraction(1, 1) - Fraction(1, 2) ** (dots + 1)) / Fraction(1, 2))
+    
+    def get_base2_exponent(self) -> int:
+        return self._base2_exponent
+    
+    def get_common_name(self) -> str:
+        return self._common_name
         
     @staticmethod
     def from_base2_exponent(base2_exponent):
@@ -150,7 +161,6 @@ class NoteType(Enum):
 
     @staticmethod
     def from_duration(duration: Fraction) -> tuple[Self, int]:
-        # fractions are automatically provided in reduced form in python
         if 256 % duration.denominator != 0:
             raise ValueError("Specified duration must be multiple of 1/256 to be expressed as NoteType and dots.")
         if duration > NoteType.MAXIMA.value:
@@ -159,7 +169,7 @@ class NoteType(Enum):
         number = duration.numerator * 256 // duration.denominator
         highest_set_exponent_bit = -1
         dots = 0
-        for bit in range(NoteType.MAXIMA.base2_exponent - NoteType.NT256.base2_exponent, -1, -1):
+        for bit in range(NoteType.MAXIMA._base2_exponent - NoteType.NT256._base2_exponent, -1, -1):
             if number & (1 << bit):
                 if highest_set_exponent_bit == -1:
                     highest_set_exponent_bit = bit
@@ -167,15 +177,37 @@ class NoteType(Enum):
                     if highest_set_exponent_bit - dots - 1 > bit:
                         raise ValueError("Couldn't infer valuable NoteType, dots combination for specified duration!")
                     dots += 1
-        return NoteType.from_base2_exponent(NoteType.NT256.base2_exponent + highest_set_exponent_bit), dots
-
-    def get_value(self, dots: int = 0) -> Fraction:
-        if dots == 0:
-            return self.value
-        return self.value * ((Fraction(1, 1) - Fraction(1, 2) ** (dots + 1)) / Fraction(1, 2))
+        return NoteType.from_base2_exponent(NoteType.NT256._base2_exponent + highest_set_exponent_bit), dots
+    
+    @staticmethod
+    def types_from_duration(duration: Fraction) -> list[tuple[Self, int]]:
+        if 256 % duration.denominator != 0:
+            raise ValueError("Specified duration must be multiple of 1/256 to be expressed as NoteType and dots.")
+        if duration > NoteType.MAXIMA.value:
+            raise ValueError("Specified duration is too big to be expressed as NoteType!")
+        # calculate NoteType and dots using binary arithmetic
+        ntpd_list = []  # List to hold NoteType and dot combinations
+        number = duration.numerator * 256 // duration.denominator
+        highest_set_exponent_bit = -1
+        dots = 0
+        for bit in range(NoteType.MAXIMA._base2_exponent - NoteType.NT256._base2_exponent, -1, -1):
+            if number & (1 << bit):
+                if highest_set_exponent_bit == -1:
+                    highest_set_exponent_bit = bit
+                else:
+                    if highest_set_exponent_bit - dots - 1 > bit:
+                        # Add current NoteType and dot combination to the list
+                        ntpd_list.append((NoteType.from_base2_exponent(NoteType.NT256._base2_exponent + highest_set_exponent_bit), dots))
+                        highest_set_exponent_bit = bit
+                        dots = 0
+                    else:
+                        dots += 1
+        # add the last NoteType and dot combination
+        ntpd_list.append((NoteType.from_base2_exponent(NoteType.NT256._base2_exponent + highest_set_exponent_bit), dots))
+        return ntpd_list
 
     def __str__(self):
-        return self.common_name
+        return self._common_name
 
 
 class Octavation(Enum):
