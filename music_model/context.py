@@ -112,17 +112,6 @@ class KeySignature:
         """
         pitch = pitch + 1200 - self._fifths * 7
         return len(self.chromatic_names[pitch % 12]) < 2
-
-    # TODO this was used in Java Controller to create notes from lines. What is difference between this and the other methods?
-    # this supposedly takes effect when abs(fifths) >= 6 as there are now more key accs then black keys. Until then it is
-    # exactly !pitch_is_natural()
-
-    # def pitch_needs_accidental(self, pitch) -> bool:
-    #     pitch = pitch + 1200 - self._fifths * 7
-    #     for i in range(0, abs(self._fifths) // 5 + 1):
-    #         if len(self.chromatic_names[(pitch - i * (1 if self._fifths > 0 else -1)) % 12]) > 1:
-    #             return True
-    #     return False
     
     def equals(self, other) -> bool:
         """

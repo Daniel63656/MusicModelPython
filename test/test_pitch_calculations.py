@@ -21,8 +21,9 @@ def test_pitch_calculation():
             pitch = (note._octave+1)*12 + note._note_name.value        
             if note._accidental:
                 pitch += note._accidental.value
-            # here prior accidentals would be checked: elif ...
-            elif key.pitch_has_key_accidental(pitch):
+            # here prior accidentals would be checked
+            # elif ...
+            elif key.pitch_has_key_accidental(pitch):   # not key.pitch_is_natural(pitch) works as well but only for up to 5 fifths
                 if key._fifths > 0:
                     pitch += 1
                 else:
@@ -35,3 +36,19 @@ def test_pitch_calculation():
             print(i % 12, i //24, name, octave)
             assert note._note_name == name
             assert note._octave == octave
+
+def test_pitch_cal():
+    score = import_xml(os.path.join(resources_dir, "acc_test.musicxml"))
+    flatten = [True, None, False, True, None, False, True, None, None, False]
+    names = [NoteName.F, NoteName.F, NoteName.F, NoteName.B, NoteName.B, NoteName.B, NoteName.E, NoteName.E, NoteName.F, NoteName.F]
+    alterations = [0, 1, 2, -2, -1, 0, 0, 1, 1, 2]
+    i = 0
+    for chord in score.get_parts()[0].get_staff(0).get_chords_and_rests():
+        if isinstance(chord, Chord):
+            note = next(iter(chord.get_notes()))
+            key = chord.get_staff().get_key_signature(chord.get_onset())
+            # check absolute pitch -> natural pitch conversion
+            name, _, alteration = Note.natural_pitch(key, note.get_pitch(), flatten=True if flatten[i] is True else False)
+            assert name == names[i]
+            assert alteration == alterations[i]
+            i += 1
