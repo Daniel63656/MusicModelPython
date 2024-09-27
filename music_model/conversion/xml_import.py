@@ -1,5 +1,6 @@
 from music_model import *
 from fractions import Fraction
+from io import StringIO, BytesIO
 import os, zipfile, xml.etree.ElementTree as ET
 from ..collection import SafeDict
 from typing import Union, IO
@@ -23,8 +24,8 @@ articulation_by_name = {
 dynamics_by_name = {d.value for d in Dynamics}
 
 
-def import_xml(file_path: str) -> Score:
-
+def _import_xml(tree) -> Score:
+    # =============== BEGIN OF PART SCOPE =============
     def process_part(root, part):
         # declare outer scope variables
         divisions_per_quarter_note = None
@@ -418,7 +419,7 @@ def import_xml(file_path: str) -> Score:
                 else:
                     assert octave_shifts[staff], "Found octave shift without a start."
                     onset, octavation = octave_shifts[staff]
-                    octave_shift = OctaveShift(staff, onset, current_onset, octavation)
+                    octave_shift = OctaveShift(staff, onset, cursor, octavation)
                     staff.insert_octave_shift(octave_shift)
             if found_dynamics is not None:
                 staff._dynamics[cursor] = Dynamics(found_dynamics)
@@ -470,8 +471,8 @@ def import_xml(file_path: str) -> Score:
             longest_voice_offset = Fraction(0, 1)
             # create measure object
             part.insert_measure(measure_onset, Measure())
+            # =============== END OF PART SCOPE FUNCTION DECLARATIONS =============
 
-        # end of subfunction declarations
         for elem in root:
             if elem.tag == "measure":
                 process_measure(elem)
@@ -483,20 +484,8 @@ def import_xml(file_path: str) -> Score:
             for staff in part.get_staffs():
                 staff.insert_time_signature(onset, time)
         return part
+        # =============== END OF PART SCOPE =============
 
-    # =============== READ THE FILE =============
-    extension = os.path.splitext(os.path.basename(file_path))[1]
-    if extension == ".mxl":     # unzip if necessary
-        with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            xml_file = zip_ref.namelist()[1]
-            file_content = zip_ref.read(xml_file)   # in bytes
-        tree = ET.ElementTree(ET.fromstring(file_content.decode('utf-8')))
-    elif extension == ".xml" or extension == ".musicxml":
-        with open(file_path, "r") as file:
-            tree = ET.parse(file)
-    else:
-        raise ValueError("Invalid file extension. Must be mxl, xml or musicxml.")
-    
     root = tree.getroot()
     if root.tag != 'score-partwise':
         raise Exception(f"Cannot parse MusicXML files in {root.tag}.")
@@ -508,3 +497,44 @@ def import_xml(file_path: str) -> Score:
             score.append_part(part)
             part = process_part(elem, part)     
     return score
+
+
+def import_xml(file_path: Union[str, IO]) -> Score:
+    """
+    Import musicXML content and files by creating a `Score` object. This function supports both file paths 
+    and file-like objects.
+
+    Parameters:
+    file_path (str | IO): The path to the XML file, or a file-like object with a read() function containing the XML content.
+    Supported file extensions are .xml, .musicxml, and .mxl.
+
+    Returns:
+    An instance of the Score class populated with the data from the imported XML.
+
+    Examples:
+        >>> score_from_file_path = import_xml("path/to/music.xml")
+        >>> score_from_xml_content = import_xml(StringIO(content_string))
+    """
+    if isinstance(file_path, str):
+        # Handle as a file path
+        extension = os.path.splitext(os.path.basename(file_path))[1]
+        if extension == ".mxl":     # unzip if necessary
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                xml_file = zip_ref.namelist()[1]
+                file_content = zip_ref.read(xml_file)   # in bytes
+            tree = ET.ElementTree(ET.fromstring(file_content.decode('utf-8')))
+        elif extension == ".xml" or extension == ".musicxml":
+            with open(file_path, "r") as file:
+                tree = ET.parse(file)
+        else:
+            raise ValueError("Invalid file extension. Must be mxl, xml or musicxml.")
+        return _import_xml(tree)
+    elif isinstance(file_path, StringIO):
+            # Handle text-based file-like object (e.g., .xml content)
+            tree = ET.ElementTree(ET.fromstring(file_path.read()))
+            return _import_xml(tree)
+    elif isinstance(file_path, BytesIO):
+            # Handle binary data (e.g., unzipped .mxl files)
+            file_content = file_path.read()
+            tree = ET.ElementTree(ET.fromstring(file_content.decode('utf-8')))
+    raise ValueError("Invalid file type. Must be a file path or file-like object.")

@@ -1,7 +1,9 @@
 import os
+from io import StringIO
 from fractions import Fraction
 from music_model import *
 from music_model.conversion import *
+from music_model.conversion.xml_export import parse_to_xml
 from music_model import ZERO
 resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
 
@@ -10,7 +12,8 @@ def test_musicxml_io():
     for file in os.listdir(resources_dir):
         filepath = os.path.join(resources_dir, file)
         score = import_xml(filepath)
-        show_xml(score)
+        # check export for crashes
+        parse_to_xml(score)
 
 def test_beams():
     # MUSICXML DOES NOT EXPORT BEAMED RESTS, SO THEY ARE NOT TESTED
@@ -72,7 +75,42 @@ def test_rest_durations():
                 assert rest.get_dots() == 0
             i += 1
 
-# TODO test octave shifts
+def check_shifts(shifts, staff):
+    assert len(shifts) == 5
+    assert shifts[0].get_octavation() == Octavation.O8va
+    assert shifts[0].get_onset() == Fraction(1, 4)
+    assert shifts[0].get_offset() == Fraction(6, 4)
+    assert shifts[1].get_octavation() == Octavation.O8vb
+    assert shifts[1].get_onset() == Fraction(6, 4)
+    assert shifts[1].get_offset() == Fraction(8, 4)
+    assert shifts[2].get_octavation() == Octavation.O8vb
+    assert shifts[2].get_onset() == Fraction(8, 4)
+    assert shifts[2].get_offset() == Fraction(10, 4)
+    assert shifts[3].get_octavation() == Octavation.O15mb
+    assert shifts[3].get_onset() == Fraction(12, 4)
+    assert shifts[3].get_offset() == Fraction(13, 4)
+    assert shifts[4].get_octavation() == Octavation.O15ma
+    assert shifts[4].get_onset() == Fraction(14, 4)
+    assert shifts[4].get_offset() == Fraction(16, 4)
+    # test range access (especially offset exclusive)
+    assert staff.get_octavation(Fraction(6, 4)) == Octavation.O8vb
+    assert staff.get_octavation(Fraction(10, 4)) == None
+    assert staff.get_octavation(Fraction(12, 4)) == Octavation.O15mb
+    assert staff.get_octavation(Fraction(13, 4)) == None
+    assert staff.get_octavation(Fraction(14, 4)) == Octavation.O15ma
+    assert staff.get_octavation(Fraction(15, 4)) == Octavation.O15ma
+
+def test_octave_shifts():
+    score = import_xml(os.path.join(resources_dir, "octave_shifts.musicxml"))
+    staff = score.get_parts()[0].get_staff(0)
+    shifts = list(staff.get_octave_shifts())
+    check_shifts(shifts, staff)
+    # also check export as this is tricky
+    xml_content = parse_to_xml(score, pretty=True)
+    score = import_xml(StringIO(xml_content))
+    staff = score.get_parts()[0].get_staff(0)
+    shifts = list(staff.get_octave_shifts())
+    check_shifts(shifts, staff)
 
 # TODO test various clef imports
 

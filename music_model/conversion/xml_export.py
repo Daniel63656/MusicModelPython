@@ -36,7 +36,7 @@ articulation_map = {
 # }
 
 
-def _parse_to_xml(score: Score, pretty: bool = False) -> str:
+def parse_to_xml(score: Score, pretty: bool=True) -> str:
     """ parse to musicXML using 'score-partwise' encoding.
     """
     first_attributes_in_score = True
@@ -86,6 +86,7 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
         # keep track of handled (Staff, Fraction) combinations
         handled_staff_attributes = set()
         handled_staff_directions = set()
+        handled_octave_shift_ends = set()   # need separate set as they are placed at offsets
         beam_info = {}  # map ChorRests to list of beam info once start of BeamGroup is encountered
 
         def create_backup(xml_measure, duration):
@@ -369,21 +370,15 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                         create_chord(xml_measure, chord_rest)
                     else:
                         create_rest(xml_measure, chord_rest)
-                    # place post <note> directions if not already handled
-                    if pair not in handled_staff_directions:
-                        xml_direction_type = ET.Element("direction-type")
-                        staff = pair[0]
-                        onset = pair[1]
-                        # octave shift end
-                        octave_shift = staff._octave_shifts[onset]
-                        if octave_shift and octave_shift.get_offset() == onset:
-                            shift = octave_shift._octavation.value
-                            ET.SubElement(xml_direction_type, "octave-shift", type="stop", size=str(abs(shift*7) + 1), number="1")
-                        # place direction if non-empty
-                        if len(xml_direction_type) > 0:
-                            xml_direction = ET.SubElement(xml_measure, "direction")
-                            xml_direction.append(xml_direction_type)
-                            ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
+                    # place post <note> direction (octave shift end)
+                    octave_shift = staff._octave_shifts[onset]
+                    if octave_shift and octave_shift not in handled_octave_shift_ends and octave_shift.get_offset() == chord_rest.get_offset():
+                        handled_octave_shift_ends.add(octave_shift)
+                        xml_direction = ET.SubElement(xml_measure, "direction")
+                        xml_direction_type = ET.SubElement(xml_direction, "direction-type")
+                        shift = octave_shift._octavation.value
+                        ET.SubElement(xml_direction_type, "octave-shift", type="stop", size=str(abs(shift*7) + 1), number="1")
+                        ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
                     # increment onset and finalize
                     onset += chord_rest.get_duration()
                     handled_staff_attributes.add(pair)
@@ -414,20 +409,16 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
                 ET.SubElement(xml_barline, "repeat", direction="backward")
             if len(xml_barline) > 0:
                 xml_measure.append(xml_barline)
-
-
         # =============== END OF PART SCOPE FUNCTION DECLARATIONS =============
+       
         for measure in part._measures.values():
             xml_measure = ET.SubElement(xml_part, "measure", number=str(measure.get_index() + 1))
             create_measure(xml_measure, part, measure)
         # add end barline to last measure
         barline = ET.SubElement(xml_measure, "barline", location="right")
         ET.SubElement(barline, "bar-style").text = "light-heavy"
-        
-        
     # =============== END OF PART SCOPE =============
-            
-    # =============== END OF SCORE SCOPE FUNCTION DECLARATIONS =============
+
     root = ET.Element("score-partwise", version=str(XML_VERSION))
     #create_title(root)
     xml_identification = ET.SubElement(root, "identification")
@@ -457,19 +448,15 @@ def _parse_to_xml(score: Score, pretty: bool = False) -> str:
 
 
 def write_xml_file(score: Score, filepath: str):
-    xml_content = _parse_to_xml(score, pretty=True)
+    xml_content = parse_to_xml(score, pretty=True)
     with open(filepath, 'w', encoding='utf-8') as xml_file:
         xml_file.write(xml_content)
-
-
-def show_xml(score: Score):
-    print(_parse_to_xml(score, pretty=True))
 
 
 def show(score: Score, dpi: int = 100, margin_in_px: int = 0):
     # for reasons only god knows, if there is no line break after <mordent/>,
     # MuseScore import will not work from that point on -> use pretty
-    xml_content = _parse_to_xml(score, pretty=True)
+    xml_content = parse_to_xml(score, pretty=True)
     # get the system's temp directory
     with tempfile.TemporaryDirectory() as temp:
         # create a temporary file for the XML content

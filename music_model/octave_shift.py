@@ -18,7 +18,7 @@ class OctaveShift(Range):
     Attributes:
     staff (Staff): The parent staff of the octave shift.
     onset (Fraction): The onset of the octave shift. Equal to the onset of the first `Event` in the octave shift.
-    offset (Fraction): The offset of the octave shift. Equal to the onset of the last `Event` in the octave shift.
+    offset (Fraction): The offset of the octave shift (exclusive). Equal to the offset of the last `Event` in the octave shift.
     octavation (Octavation): The type of octavation.
     """
     def __init__(self, staff: Staff, onset: Fraction, offset: Fraction, octavation: Octavation):
@@ -50,7 +50,3 @@ class OctaveShift(Range):
         
     def get_offset(self) -> Fraction:
         return self._offset
-    
-    def encloses(self, time: Fraction) -> bool:
-        # make offset incluse
-        return self.get_onset() <= time <= self.get_offset()

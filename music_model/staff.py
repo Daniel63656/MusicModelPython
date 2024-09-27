@@ -104,6 +104,9 @@ class Staff():
         range = self._octave_shifts[time]
         return None if range is None else range._octavation
     
+    def get_octave_shifts(self) -> Iterable[OctaveShift]:
+        return self._octave_shifts.values()
+    
     def get_dynamics(self, time: Fraction) -> Dynamics:
         return self._dynamics[time]
 
