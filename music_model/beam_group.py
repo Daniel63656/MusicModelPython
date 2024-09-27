@@ -17,12 +17,11 @@ class BeamGroup(Range):
 
     Attributes:
     voice (Voice): The voice that the beam group belongs to.
-    grace_beam (bool): `True` if the beam group contains grace chords, `False` otherwise. Beam groups can't encompass both grace and non grace chords.
     chord_rests (SortedList): A sorted list of the chords and rests contained in the beam group.
     """
     def __init__(self) -> None:
         self._voice = None
-        self._grace_beam = False
+        self._grace_beam = False    # True if the beam group contains grace chords. Can't have both.
         self._chord_rests = SortedList(key=lambda e: e.get_index() if isinstance(e, GraceChord) else e.get_onset())
 
     def add_chord_or_rest(self, chord_rest: Union[GraceChord, ChordRest]):

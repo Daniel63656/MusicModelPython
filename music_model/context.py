@@ -38,15 +38,6 @@ class Clef():
         """
         return self._octave - self._clef_type.get_standard_octave()
 
-    def get_staff_line(self) -> int:    #TODO do I need this?
-        """
-        Returns the staff line position of the clef. Used for pitch calculations.
-
-        staff line positions (slp) count every possible note position in a staff, counted upwards and starting from the bottom line
-        of the staff as being 0
-        """
-        return (self.clef_type.value[0] - 1) * 2
-
     def get_C0_reference_line(self):
         """
         Returns the staff line position of C0 in the clef. Useful for pitch calculations.
@@ -68,7 +59,7 @@ class KeySignature:
 
     Attributes:
     fifths (int): The number of sharps (positive) or flats (negative) in the key signature. 0 for any number of naturals when resolving to C major/A minor.
-    mode (bool): `True` for major, `False` for minor.
+    minor (bool): mode of the key signature. `True` for minor, `False` for major.
     """
     chromatic_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     flattened_chromatic_names = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]

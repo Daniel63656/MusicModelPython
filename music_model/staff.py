@@ -75,6 +75,12 @@ class Staff():
         """ 
         for event in self.get_events(start, end, inclusive, reverse):
             yield from event._chord_rests.values()
+
+    def get_chords_and_rests_at(self, time: Fraction) -> Iterator[ChordRest]:
+        event = self._events.get(time)
+        if event is None:
+            return iter(())
+        return self._events[time]._chord_rests.values()
     
     def get_clef(self, time: Fraction) -> Clef:
         return self._clefs[time]

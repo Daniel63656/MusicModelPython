@@ -108,6 +108,18 @@ class Element(NavigableRange, ABC):
             site = site._site
         return site
     
+    def get_duration(self) -> Fraction:
+        """
+        Returns the real duration of the element, taking tuplets into account.
+        """
+        duration = self._note_type.get_value(self._dots)
+        site = self._site
+        # can't use isinstance here becuase this would cause circular dependency!
+        while hasattr(site, "_site"):
+            duration *= site._time_mod
+            site = site._site
+        return duration
+    
     def next(self) -> Optional[Self]:
         idx = self._site._elements.bisect_right(self.get_onset())
         if idx >= len(self._site._elements):

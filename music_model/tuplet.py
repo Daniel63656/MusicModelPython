@@ -15,25 +15,50 @@ if t.TYPE_CHECKING:
 class Tuplet(Site, Element):
     """
     Tuplet class. Tuplets are both an `Element` and a `Site`, containing other elements themselves.
+
+    Inherits:
+    elements (List[Element]): The elements contained in the voice.
+    note_type (NoteType): The normal note type of the tuplet.
+    dots (int): The number of dots of the normal note type.
+
+    Attributes:
+    onset (Fraction): The onset of the tuplet.
+    normal_count (int): The number of normal notes in the tuplet.
+    actual_count (int): The number of actual notes in the tuplet.
+    actual_type (NoteType): The actual note type of the tuplet. Defaults to normal type if not specified.
+    actual_dots (int): The number of dots of the actual note type. Defaults to normal dots if not specified.
+    time_mod (Fraction): The time modification caused by this tuplet. Computable from other attributes.
     """
     def __init__(self, normal_count, normal_type, normal_dots, actual_count, actual_type=None, actual_dots=None) -> None:
         # call super constructors. count, type and dots together make a duration
         Site.__init__(self)
         Element.__init__(self, normal_type, normal_dots)
-        # actual type + duration default to normal if not specified
         self._onset = None  # know onset after adding to site even if no elements inside
         self._normal_count = normal_count
         self._actual_count = actual_count
-        if actual_type is None:
-            actual_type = normal_type
-        if actual_dots is None:
-            actual_dots = normal_dots
-        self._actual_type = actual_type
-        self._actual_dots = actual_dots
-        # local time modification (caused by this tuplet only)
+        self._actual_type = normal_type if actual_type is None else actual_type
+        self._actual_dots = normal_dots if actual_dots is None else actual_dots
         self._time_mod = normal_type.get_value(normal_dots)*normal_count / (actual_type.get_value(actual_dots)*actual_count)
 
+    def get_normal_count(self) -> int:
+        return self._normal_count
+    
+    def get_actual_count(self) -> int:
+        return self._actual_count
+    
+    # normal NoteType and dot getters are inherited from Element
+    
+    def get_actual_type(self) -> NoteType:
+        return self._actual_type
+    
+    def get_actual_dots(self) -> int:
+        return self._actual_dots
+
     def __get_insertion_offset(self):
+        """
+        Internal method to get the onset of the next element to be added to the tuplet. Used
+        to override append methods of `Site`.
+        """
         if len(self._elements) == 0:
             return self._onset
         return self._elements.values()[-1].get_offset()
@@ -54,9 +79,4 @@ class Tuplet(Site, Element):
         return self._onset + self.get_duration()
     
     def get_duration(self) -> Fraction:
-        duration = self._note_type.get_value(self._dots)*self._normal_count
-        site = self._site
-        while hasattr(site, "_site"):
-            duration *= site._time_mod
-            site = site._site
-        return duration
+        return super().get_duration()*self._normal_count

@@ -20,6 +20,7 @@ articulation_by_name = {
     "staccatissimo": Expression.STACCATISSIMO,
     "tenuto": Expression.TENUTO
 }
+dynamics_by_name = {d.value for d in Dynamics}
 
 
 def import_xml(file_path: str) -> Score:
@@ -265,9 +266,9 @@ def import_xml(file_path: str) -> Score:
                                     expressions.append(articulation_by_name[c.tag])
                         elif child.tag == "dynamics":
                             # musicXML allows several dynamics. For now, last rules
-                            for dynamic in child:
-                                if dynamic.tag in Dynamics.__members__:
-                                    staff._dynamics[cursor] = Dynamics(dynamic.tag)
+                            for d in child:
+                                if d.tag in dynamics_by_name:
+                                    staff._dynamics[cursor] = Dynamics(d.tag)
                         elif child.tag == "fermata":
                             has_fermata = True
                 elif elem.tag == "tie":
@@ -370,7 +371,7 @@ def import_xml(file_path: str) -> Score:
             staff = part._staffs[0] # if no staff specified, assume first one
             octavation = None
             octavation_start = None
-            dynamics = None
+            found_dynamics = None
             # extract information
             for elem in root:
                 if elem.tag == "direction-type":
@@ -386,9 +387,10 @@ def import_xml(file_path: str) -> Score:
                                 octavation_start = False
                         elif child.tag == "dynamics":
                             # musicXML allows several dynamics. For now, last rules
-                            for dynamic in child:
-                                if dynamic.tag in Dynamics.__members__:
-                                    dynamics = dynamic.tag
+                            for d in child:
+                                if d.tag in dynamics_by_name:
+                                    # cache dynamics as staff is declared later!
+                                    found_dynamics = Dynamics(d.tag)
                         elif child.tag == "coda":
                             part._score.insert_repeat_mark(cursor, Coda())
                         elif child.tag == "segno":
@@ -418,8 +420,8 @@ def import_xml(file_path: str) -> Score:
                     onset, octavation = octave_shifts[staff]
                     octave_shift = OctaveShift(staff, onset, current_onset, octavation)
                     staff.insert_octave_shift(octave_shift)
-            if dynamics is not None:
-                staff._dynamics[cursor] = Dynamics(dynamics)
+            if found_dynamics is not None:
+                staff._dynamics[cursor] = Dynamics(found_dynamics)
         
         def process_measure(root):
             nonlocal cursor

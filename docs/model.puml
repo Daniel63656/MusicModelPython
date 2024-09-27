@@ -1,12 +1,6 @@
 @startuml
 class Score {
 }
-class Repetition {
-Score : score
-Fraction : onset
-Fraction : offset
-Map[Fraction, int] : endings
-}
 class Part {
 Score : score
 int: idx
@@ -15,22 +9,24 @@ Instrument : instrument
 class Staff {
 Part : part
 int : id
+Map[Onset, Dynamic] : dynamics
 }
 class Event {
+Staff : staff
 Fraction : onset
 }
 class Clef {
-int : staff_line
-NoteName : note_name
+ClefType: clef_type
 int : octave
 }
 class KeySignature {
 int : fifths
-boolean : mode
+bool : minor
 }
 class TimeSignature {
 int : beats
 int : beat_type
+bool: symbolic
 }
 class OctaveShift {
 Staff : staff
@@ -50,9 +46,10 @@ int : id
 }
 class Tuplet {
 Fraction : onset
-int : normal_count, actual_count
-NoteType : normal_type, actual_type
-int : normal_dots, actual_dots
+int : normal_count
+int : actual_count
+NoteType : actual_type
+int : actual_dots
 }
 abstract class Element {
 Site : site
@@ -65,8 +62,8 @@ BeamGroup : beam_group
 bool: fermata
 }
 class Chord {
-List[Expression] : expressions
 Stem : stem
+List[Expression] : expressions
 }
 class Rest {
 Fraction : nominal_duration
@@ -76,11 +73,12 @@ Chord : chord
 int : index
 NoteType : note_type
 int : dots
-List[Expression] : expressions
 Stem : stem
 BeamGroup : beam_group
+List[Expression] : expressions
 }
 class Note {
+Chord | GraceChord : chord
 NoteName : note_name
 int : octave
 int : pitch
@@ -92,16 +90,15 @@ Voice : voice
 
 
 Score "*" *-- Part
-Score "onset" *-- Repetition
 Part "id" *-- Staff
 Part "id" *-- Voice
-Staff "onset" *--Event
-Staff "onset" *--Clef
-Staff "onset" *--KeySignature
-Staff "onset" *--TimeSignature
-Staff "onset" *--OctaveShift
+Staff "onset" *-- Event
+Staff "onset" *-- Clef
+Staff "onset" *-- KeySignature
+Staff "onset" *-- TimeSignature
+Staff "onset" *-- OctaveShift
 Part "onset" *-- Measure
-Voice "onset" *-- BeamGroup
+Voice -[hidden] BeamGroup
 Site <|-- Voice
 Site <|-- Tuplet
 Event "voice" *-- ChordRest

@@ -57,18 +57,6 @@ class Chord(ChordRest):
 
     def get_expression(self) -> Iterable[Expression]:
         return self._expressions
-
-    def get_duration(self) -> Fraction:
-        """
-        Get the real duration of the chord, taking tuplets into account.
-        """
-        duration = self._note_type.get_value(self._dots)
-        site = self._site
-        # can't use isinstance here becuase this would cause circular dependency!
-        while hasattr(site, "_site"):
-            duration *= site._time_mod
-            site = site._site
-        return duration
     
     def add_note(self, note: Note):
         self._notes.add(note)

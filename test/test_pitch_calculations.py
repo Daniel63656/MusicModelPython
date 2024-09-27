@@ -32,12 +32,12 @@ def test_pitch_calculation():
 
             # check absolute pitch -> natural pitch conversion
             ascending = (i // 12) % 2 == 0
-            name, octave, _ = Note.natural_pitch(key, note.get_pitch(), flatten=not ascending)
+            name, octave, _ = Note.calculate_natural_pitch(key, note.get_pitch(), flatten=not ascending)
             print(i % 12, i //24, name, octave)
             assert note._note_name == name
             assert note._octave == octave
 
-def test_pitch_cal():
+def test_natural_pitch_calculation():
     score = import_xml(os.path.join(resources_dir, "acc_test.musicxml"))
     flatten = [True, None, False, True, None, False, True, None, None, False]
     names = [NoteName.F, NoteName.F, NoteName.F, NoteName.B, NoteName.B, NoteName.B, NoteName.E, NoteName.E, NoteName.F, NoteName.F]
@@ -48,7 +48,7 @@ def test_pitch_cal():
             note = next(iter(chord.get_notes()))
             key = chord.get_staff().get_key_signature(chord.get_onset())
             # check absolute pitch -> natural pitch conversion
-            name, _, alteration = Note.natural_pitch(key, note.get_pitch(), flatten=True if flatten[i] is True else False)
+            name, _, alteration = Note.calculate_natural_pitch(key, note.get_pitch(), flatten=True if flatten[i] is True else False)
             assert name == names[i]
             assert alteration == alterations[i]
             i += 1

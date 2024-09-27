@@ -3,8 +3,8 @@ from .enums import NoteName
 
 import typing as t
 if t.TYPE_CHECKING:
-    from typing import Optional
-    from .chord import Chord
+    from typing import Optional, Union
+    from .chord import Chord, GraceChord
     from .enums import Accidental, KeySignature
 
 
@@ -16,7 +16,7 @@ class Note():
     pitch (`NoteName` and octave). They can also have an `Accidental`, and can be tied to other notes.
 
     Attributes:
-    chord (Chord): The chord the note belongs to.
+    chord (Chord | GraceChord): The (grace) chord the note belongs to.
     note_name (NoteName): The name of the note.
     octave (int): The octave of the note.
     pitch (int): The absolute pitch of the note.
@@ -33,7 +33,7 @@ class Note():
         self._previous_tied = None
         self._next_tied = None
 
-    def get_chord(self) -> Chord:
+    def get_chord(self) -> Union[Chord, GraceChord]:
         return self._chord
 
     def get_note_name(self) -> NoteName:
@@ -92,7 +92,15 @@ class Note():
         self.untie_with_previous()
 
     @staticmethod
-    def natural_pitch(key_signature: KeySignature, pitch: int, flatten: bool=False):
+    def calculate_natural_pitch(key_signature: KeySignature, pitch: int, flatten: bool=False):
+        """
+        Compute the natural pitch for a given pitch in a given key signature.
+
+        Parameters:
+        key_signature (KeySignature): The current key signature.
+        pitch (int): The absolute pitch value.
+        flatten (bool): Whether to lower or raise the pitch by a semitone if it is non natural in the key signature.
+        """
         alteration = 0
         # make pitch natural in this key
         if not key_signature.pitch_is_natural(pitch):

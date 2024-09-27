@@ -38,6 +38,7 @@ class Rest(ChordRest):
         super().__init__(note_type, dots)
 
     def get_duration(self) -> Fraction:
+        # override Element.get_duration() to use nominal duration variable instead
         duration = self._nominal_duration
         site = self._site
         while hasattr(site, "_site"):

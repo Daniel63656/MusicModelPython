@@ -6,19 +6,100 @@ from music_model import ZERO
 resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
 
 
-def test_songs():
+def test_musicxml_io():
     for file in os.listdir(resources_dir):
         filepath = os.path.join(resources_dir, file)
         score = import_xml(filepath)
         show_xml(score)
 
-def test_tuplet_length():
+def test_beams():
+    # MUSICXML DOES NOT EXPORT BEAMED RESTS, SO THEY ARE NOT TESTED
+    score = import_xml(os.path.join(resources_dir, "beams.musicxml"))
+    staff = score.get_parts()[0].get_staff(0)
+    # test both way referencing
+    bg = next(iter(staff.get_chords_and_rests_at(ZERO))).get_beam_group()
+    assert len(bg.get_chords_and_rests()) == 5
+    assert bg.get_offset() == Fraction(3, 8)
+    assert bg.get_duration() == Fraction(3, 8)
+    for chord_rest in bg.get_chords_and_rests():
+        assert chord_rest.get_beam_group() == bg
+    bg = next(iter(staff.get_chords_and_rests_at(Fraction(2, 4)))).get_beam_group()
+    assert len(bg.get_chords_and_rests()) == 6
+    assert bg.get_offset() == Fraction(11, 16)
+    assert bg.get_duration() == Fraction(3, 16)
+    for chord_rest in bg.get_chords_and_rests():
+        assert chord_rest.get_beam_group() == bg
+    bg = next(iter(staff.get_chords_and_rests_at(Fraction(6, 8)))).get_beam_group()
+    assert len(bg.get_chords_and_rests()) == 2
+    assert bg.get_offset() == Fraction(14, 16)
+    assert bg.get_duration() == Fraction(1, 8)
+    for chord_rest in bg.get_chords_and_rests():
+        assert chord_rest.get_beam_group() == bg
+    # grace beam group
+    chord = next(iter(staff.get_chords_and_rests_at(Fraction(1, 1))))
+    grace_bg = None
+    for grace_chord in chord.get_grace_chords():
+        if grace_bg is None:
+            grace_bg = grace_chord.get_beam_group()
+        else:
+            assert grace_bg == grace_chord.get_beam_group()
+    assert grace_bg.get_duration() == ZERO
+    assert grace_bg._grace_beam == True
+
+def test_tuplet_durations():
     score = import_xml(os.path.join(resources_dir, "simple_nested_tuplet.musicxml"))
     voice = score.get_parts()[0].get_voice(1)
     outer_tuplet = voice.get_element(Fraction(1, 2))
     assert outer_tuplet.get_duration() == Fraction(1, 4)
     inner_tuplet = outer_tuplet.get_element(Fraction(2, 3))
     assert inner_tuplet.get_duration() == Fraction(1, 12)
+
+# TODO test tuplet with no time mod
+    
+# TODO test tuplet with different normal/actual types/dots
+
+def test_rest_durations():
+    score = import_xml(os.path.join(resources_dir, "rest_durations.musicxml"))
+    durations = [Fraction(3, 4), Fraction(3, 4), Fraction(2, 4), Fraction(1, 12), Fraction(1, 12), Fraction(1, 12), Fraction(5, 4), Fraction(5, 12), Fraction(5, 12), Fraction(5, 12), Fraction(4, 4), Fraction(1, 4), Fraction(4, 4), Fraction(4, 4)]
+    measure_rest = [True, False, False, False, False, False, True, False, False, False, False, False, True, False]
+    i = 0
+    for rest in score.get_parts()[0].get_staff(1).get_chords_and_rests():
+        if isinstance(rest, Rest):
+            assert rest.get_duration() == durations[i]
+            assert rest.is_measure_rest() == measure_rest[i]
+            if measure_rest[i]:
+                assert rest.get_note_type() == NoteType.WHOLE
+                assert rest.get_dots() == 0
+            i += 1
+
+# TODO test octave shifts
+
+# TODO test various clef imports
+
+def test_dynamic_import():
+    score = import_xml(os.path.join(resources_dir, "dynamics_and_fermatas.musicxml"))
+    staff = score.get_parts()[0].get_staff(0)
+    assert len(staff._dynamics) == 4
+    assert staff._dynamics.get(Fraction(1, 4)) == Dynamics.MEZZO_FORTE
+    assert staff._dynamics.get(Fraction(2, 4)) == Dynamics.PIANISSIMO
+    assert staff._dynamics.get(Fraction(3, 4)) == Dynamics.FORTE_FORTISSIMO
+    assert staff._dynamics.get(Fraction(1, 1)) == Dynamics.PIANO
+    staff = score.get_parts()[0].get_staff(1)
+    assert len(staff._dynamics) == 2
+    assert staff._dynamics.get(Fraction(1, 1)) == Dynamics.FORTE
+    assert staff._dynamics.get(Fraction(3, 2)) == Dynamics.MEZZO_PIANO
+
+def test_fermata_import():
+    score = import_xml(os.path.join(resources_dir, "dynamics_and_fermatas.musicxml"))
+    staff = score.get_parts()[0].get_staff(0)
+    assert next(iter(staff.get_chords_and_rests_at(Fraction(7, 4)))).has_fermata() == True
+    assert next(iter(staff.get_chords_and_rests_at(Fraction(8, 4)))).has_fermata() == False
+    assert next(iter(staff.get_chords_and_rests_at(Fraction(10, 4)))).has_fermata() == True
+    staff = score.get_parts()[0].get_staff(1)
+    assert next(iter(staff.get_chords_and_rests_at(Fraction(8 , 4)))).has_fermata() == True
+    assert next(iter(staff.get_chords_and_rests_at(Fraction(10, 4)))).has_fermata() == True
+
+# TODO test expression import
 
 def test_standard_contexts():
     score = Score()

@@ -24,9 +24,11 @@ class Site(Range):
     elements (SortedDict): A sorted dictionary of elements in the site, ordered by onset.
     """
     def __init__(self):
+        # this collection would be owned by Voice and Tuplet to make Site an Interface in other languages.
+        # As Python allows multiple inheritance, may as well use it here for simplicity.
         self._elements = SortedDict()
     
-    def get_elements(self, start: Fraction = None, end: Fraction = None, inclusive=(True, True), reverse: bool = False) -> Iterator[Element]:
+    def get_elements(self, start: Fraction=None, end: Fraction=None, inclusive=(True, True), reverse: bool=False) -> Iterator[Element]:
         """ Create an iterator of directly owned elements (Tuplets, Chords and Rests)
             between `start` and `end`, not recursing into child sites
 
