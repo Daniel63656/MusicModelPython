@@ -26,14 +26,6 @@ articulation_map = {
     Expression.STACCATISSIMO: "staccatissimo",
     Expression.TENUTO: "tenuto"
 }
-# repeat_command_map = {
-#     RepeatCommand.DA_CAPO: "D.C.",
-#     RepeatCommand.DA_CAPO_AL_FINE: "D.C. al Fine",
-#     RepeatCommand.DA_CAPO_AL_CODA: "D.C. al Coda",
-#     RepeatCommand.DAL_SEGNO: "D.S.",
-#     RepeatCommand.DAL_SEGNO_AL_FINE: "D.S. al Fine",
-#     RepeatCommand.DAL_SEGNO_AL_CODA: "D.S. al Coda"
-# }
 
 
 def parse_to_xml(score: Score, pretty: bool=True) -> str:
