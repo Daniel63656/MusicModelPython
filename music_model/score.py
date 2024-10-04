@@ -111,3 +111,8 @@ class Score(Range):
             print(f"{time} - {jump[0]}")
             time = jump[1]
         print(f"{time} - {cursor._time}")
+
+    def to_json(self):
+        return {
+            "parts": [part.to_json() for part in self._parts]
+        }

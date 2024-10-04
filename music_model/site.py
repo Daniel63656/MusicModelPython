@@ -1,9 +1,9 @@
 from __future__ import annotations
+from abc import abstractmethod
 from music_model import ZERO
 from .collection import SortedMap
 from .abstract import Range
 from .chord import Chord
-from .event import Event
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -57,19 +57,18 @@ class Site(Range):
             respectively. The default is ``(True, True)`` such that the range is
             inclusive of both start and end.
         """
-        # correct minimum to include current tuplet sites
+        # correct minimum to include current tuplet for elements if within one
         safe_start = start
         if start:
-            index = self._elements.bisect_right(safe_start) - 1
-            if index >= 0:
-                element = self._elements[self._elements.keys()[index]]
-                if isinstance(element, Site):
-                    safe_start = element.get_onset()
+            entry = self._elements.floor_entry(start)
+            if entry is not None and isinstance(entry[1], Site):
+                safe_start = entry[1].get_onset()
         # loop over sites recursively
         for key in self._elements.irange(safe_start, end, inclusive, reverse):
             element = self._elements[key]
             # recurse into Tuplet
             if isinstance(element, Site):
+                # here use uncorrected start
                 yield from element.get_chords_and_rests(start, end, inclusive, reverse)
             else:
                 yield element
@@ -83,9 +82,18 @@ class Site(Range):
             element = element._elements.values()[-1]
         return element
 
+    @abstractmethod
     def append_note(self, note: Note, staff: Staff, note_type: NoteType, dots=0, stem: Stem = None) -> Chord:
-        return self.insert_note(self.get_offset(), note, staff, note_type, dots, stem)
+        pass
+    
+    @abstractmethod
+    def append_chord_or_rest(self, chord_rest: ChordRest, staff: Staff):
+        pass
         
+    @abstractmethod
+    def append_tuplet(self, tuplet: Tuplet):
+        pass
+
     def insert_note(self, onset: Fraction, note: Note, staff: Staff, note_type: NoteType, dots=0, stem: Stem = None) -> Chord:
         chord = Chord(note_type, dots, stem)
         chord._notes.add(note)
@@ -93,33 +101,17 @@ class Site(Range):
         self.insert_chord_or_rest(onset, chord, staff)
         return chord
 
-    def append_chord_or_rest(self, chord_rest: ChordRest, staff: Staff):
-        self.insert_chord_or_rest(self.get_offset(), chord_rest, staff)
-
     def insert_chord_or_rest(self, onset: Fraction, chord_rest: ChordRest, staff: Staff):
-        event = self.__get_or_create_event(staff, onset)
+        event = staff._get_or_create_event(onset)
         event._chord_rests[self] = chord_rest
         chord_rest._event = event
         chord_rest._site = self
         self._elements[onset] = chord_rest
 
-    def append_tuplet(self, tuplet: Tuplet):
-        self.insert_tuplet(self.get_offset(), tuplet)
-
     def insert_tuplet(self, onset: Fraction, tuplet: Tuplet):
         tuplet._site = self
         self._elements[onset] = tuplet
         tuplet._onset = onset
-
-    def __get_or_create_event(self, staff: Staff, onset: Fraction) -> Event:
-        """
-        Internal function used to get or create an event at a given onset and staff.
-        """
-        if onset in staff._events:
-            return staff._events[onset]
-        event = Event(staff, onset)
-        staff._events[onset] = event
-        return event
     
     def get_onset(self) -> Fraction:
         if len(self._elements) == 0:

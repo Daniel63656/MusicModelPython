@@ -1,6 +1,7 @@
 from __future__ import annotations
 from fractions import Fraction
 from .collection import SortedMap, ContinuousMap, DiscontinuousMap
+from .event import Event
 
 import typing as t
 if t.TYPE_CHECKING:
@@ -53,7 +54,7 @@ class Staff():
             the start and end ought to be included in the range,
             respectively. The default is ``(True, True)`` such that the range is
             inclusive of both start and end.)
-        """ 
+        """
         return (self._events[key] for key in self._events.irange(start, end, inclusive, reverse))
     
     def get_event(self, time: Fraction) -> Optional[Event]:
@@ -123,3 +124,23 @@ class Staff():
 
     def insert_dynamics(self, onset: Fraction, dynamics: Dynamics):
         self._dynamics[onset] = dynamics
+
+    def _get_or_create_event(self, onset: Fraction) -> Event:
+        """
+        Internal function used to get or create an event at a given onset and staff.
+        """
+        if onset in self._events:
+            return self._events[onset]
+        event = Event(self, onset)
+        self._events[onset] = event
+        return event
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "clefs": {str(onset): clef.to_json() for onset, clef in self._clefs.items()},
+            "key_signatures": {str(onset): key_signature.to_json() for onset, key_signature in self._key_signatures.items()},
+            "time_signatures": {str(onset): time_signature.to_json() for onset, time_signature in self._time_signatures.items()},
+            "octave_shifts": [octave_shift.to_json() for octave_shift in self._octave_shifts.values()],
+            "dynamics": {str(onset): dynamics.name for onset, dynamics in self._dynamics.items()}
+        }

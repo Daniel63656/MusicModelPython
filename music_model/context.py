@@ -53,6 +53,13 @@ class Clef():
         if not isinstance(other, self.__class__):
             return False
         return self._clef_type == other._clef_type and self._octave == other._octave
+    
+    def to_json(self):
+        return {
+            "clef_type": self._clef_type.name,
+            "octave_shift": self._octave,
+            "after_barline": self._after_barline
+        }
 
 
 class KeySignature:
@@ -120,6 +127,12 @@ class KeySignature:
             return self.chromatic_names[(self._fifths*7 + 9*self._minor) % 12] + major_minor
         return self.flattened_chromatic_names[(self._fifths*7 + 9*self._minor + 1200) % 12] + major_minor
 
+    def to_json(self):
+        return {
+            "fifths": self._fifths,
+            "minor": self._minor
+        }
+
 
 class TimeSignature:
     """
@@ -159,3 +172,10 @@ class TimeSignature:
         if not isinstance(other, self.__class__):
             return False
         return self._numerator == other._numerator and self._denominator == other._denominator and self._symbolic == other._symbolic
+
+    def to_json(self):
+        return {
+            "numerator": self._numerator,
+            "denominator": self._denominator,
+            "symbolic": self._symbolic
+        }

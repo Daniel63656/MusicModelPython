@@ -121,19 +121,15 @@ class Element(NavigableRange, ABC):
         return duration
     
     def next(self) -> Optional[Self]:
-        idx = self._site._elements.bisect_right(self.get_onset())
-        if idx >= len(self._site._elements):
-            return None
-        return self._site._elements.values()[idx]
+        entry = self._site._elements.higher_entry(self.get_onset())
+        return None if entry is None else entry[1]
     
     def previous(self) -> Optional[Self]:
-        idx = self._site._elements.bisect_left(self.get_onset())
-        if idx < 0:
-            return None
-        return self._site._elements.values()[idx]
+        entry = self._site._elements.lower_entry(self.get_onset())
+        return None if entry is None else entry[1]
 
     def get_index(self) -> int:
-        return self._site._elements.bisect_right(self.get_onset()) - 1
+        return self._site._elements.index_of(self.get_onset())
 
 
 class ChordRest(Element, ABC):

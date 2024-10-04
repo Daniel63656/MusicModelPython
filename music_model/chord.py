@@ -71,7 +71,20 @@ class Chord(ChordRest):
         dots_str = '.' * self._dots
         notes_str = ', '.join(str(note) for note in self._notes)
         return f"Chord({self._note_type}{dots_str}, Notes: [{notes_str}])"
-    
+
+    def to_json(self):
+        return {
+            "staff": self.get_staff().get_id(),
+            "note_type": self._note_type.name,
+            "dots": self._dots,
+            "fermata": self._fermata,
+            "notes": [note.to_json() for note in self._notes],
+            "stem": self._stem.name if self._stem is not None else None,
+            "grace_chords": [grace_chord.to_json() for grace_chord in self._grace_chords],
+            "expressions": [expression.name for expression in self._expressions],
+            "visible": self._visible
+        }
+
 
 class GraceChord(NavigableRange):
     """
@@ -163,3 +176,12 @@ class GraceChord(NavigableRange):
         dots_str = '.' * self._dots
         notes_str = ', '.join(str(note) for note in self._notes)
         return f"GraceChord({self._note_type}{dots_str}, Notes: [{notes_str}])"
+
+    def to_json(self):
+        return {
+            "note_type": self._note_type.name,
+            "dots": self._dots,
+            "notes": [note.to_json() for note in self._notes],
+            "stem": self._stem.name if self._stem is not None else None,
+            "expressions": [expression.name for expression in self._expressions]
+        }

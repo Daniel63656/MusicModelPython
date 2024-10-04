@@ -17,12 +17,10 @@ class SortedMap(SortedDict):
         """
         Return the smallest value with a key greater than or equal to 'key' or None if no such value exists.
         """
-        # check if exact value exists
-        value = self.get(key)
-        if value is not None:
-            return key, value
-        # if the key doesn't exist, fallback to the first key greater than the input key
-        return self.higher_value(key)
+        index = self.bisect_left(key)
+        if index < len(self):
+            return self.keys()[index], super().__getitem__(self.keys()[index])
+        return None
     
     def lower_entry(self, key):
         """
@@ -37,12 +35,13 @@ class SortedMap(SortedDict):
         """
         Return the largest value with a key less than or equal to 'key' or None if no such value exists.
         """
-        # check if exact value exists
-        value = self.get(key)
-        if value is not None:
-            return key, value
-        # if the key doesn't exist, fallback to the largest key smaller than the input key
-        return self.lower_value(key)
+        index = self.bisect_right(key) - 1
+        if index >= 0:
+            return self.keys()[index], super().__getitem__(self.keys()[index])
+        return None
+    
+    def index_of(self, key):
+        return self.bisect_right(key) - 1
  
 
 class ContinuousMap(SortedMap):

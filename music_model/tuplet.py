@@ -10,6 +10,7 @@ if t.TYPE_CHECKING:
     from .staff import Staff
     from .chord import Chord
     from .note import Note
+    from .abstract import ChordRest
     
 
 class Tuplet(Site, Element):
@@ -17,7 +18,7 @@ class Tuplet(Site, Element):
     Tuplet class. Tuplets are both an `Element` and a `Site`, containing other elements themselves.
 
     Inherits:
-    elements (List[Element]): The elements contained in the voice.
+    elements (SortedDict): A sorted dictionary of elements contained in the voice.
     note_type (NoteType): The normal note type of the tuplet.
     dots (int): The number of dots of the normal note type.
 
@@ -72,6 +73,13 @@ class Tuplet(Site, Element):
     def append_tuplet(self, tuplet: Tuplet):
         self.insert_tuplet(self.__get_insertion_offset(), tuplet)
 
+    def insert_chord_or_rest(self, onset: Fraction, chord_rest: ChordRest, staff: Staff):
+        event = staff._get_or_create_event(onset)
+        event._chord_rests[self.get_voice()] = chord_rest
+        chord_rest._event = event
+        chord_rest._site = self
+        self._elements[onset] = chord_rest
+
     def get_onset(self) -> Fraction:
         return self._onset
         
@@ -80,3 +88,15 @@ class Tuplet(Site, Element):
     
     def get_duration(self) -> Fraction:
         return super().get_duration()*self._normal_count
+
+    def to_json(self):
+        return {
+            "staff": self.get_staff().get_id(),
+            "normal_count": self._normal_count,
+            "normal_type": self._note_type.name,
+            "normal_dots": self._dots,
+            "actual_count": self._actual_count,
+            "actual_type": self._actual_type.name,
+            "actual_dots": self._actual_dots,
+            "elements": {str(onset): element.to_json() for onset, element in self._elements.items()}
+        }

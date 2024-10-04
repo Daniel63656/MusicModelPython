@@ -233,7 +233,7 @@ class Stem(Enum):
     Represents the different directions of stems in music notation.
     """
     UP = 1
-    DOWN = 0
+    DOWN = -1
 
 
 class Expression(Enum):

@@ -51,3 +51,12 @@ class Rest(ChordRest):
     def __str__(self):
         dots_str = '.' * self._dots
         return f"Rest({self._note_type}{dots_str})"
+
+    def to_json(self):
+        return {
+            "staff": self.get_staff().get_id(),
+            "note_type": self._note_type.name,
+            "dots": self._dots,
+            "duration": str(self._nominal_duration),
+            "visible": self._visible
+        }

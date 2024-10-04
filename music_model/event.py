@@ -43,16 +43,12 @@ class Event(NavigableRange):
         return max(cr.get_offset() for cr in self._chord_rests.values())
     
     def next(self) -> Optional[Self]:
-        idx = self._staff._events.bisect_right(self.get_onset())
-        if idx >= len(self._staff._events):
-            return None
-        return self._staff._events.values()[idx]
+        entry = self._staff._events.higher_Entry(self.get_onset())
+        return None if entry is None else entry[1]
     
     def previous(self) -> Optional[Self]:
-        idx = self._staff._events.bisect_left(self.get_onset())
-        if idx < 0:
-            return None
-        return self._staff._events.values()[idx]
+        entry = self._staff._events.lower_entry(self.get_onset())
+        return None if entry is None else entry[1]
 
     def get_index(self) -> int:
-        return self._staff._events.bisect_right(self.get_onset()) - 1
+        return self._staff._events.index_of(self.get_onset())

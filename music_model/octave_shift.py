@@ -50,3 +50,10 @@ class OctaveShift(Range):
         
     def get_offset(self) -> Fraction:
         return self._offset
+
+    def to_json(self):
+        return {
+            "onset": str(self._onset),
+            "offset": str(self._offset),
+            "octavation": self._octavation.name
+        }

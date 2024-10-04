@@ -98,3 +98,11 @@ class Part():
         self._measures[onset] = measure
         measure._part = self
         measure._onset = onset
+
+    def to_json(self):
+        return {
+            "instrument": self._instrument,
+            "staffs": {staff_id: staff.to_json() for staff_id, staff in self._staffs.items()},
+            "voices": {voice_id: voice.to_json() for voice_id, voice in self._voices.items()},
+            "measures": [str(onset) for onset in self._measures.keys()]    # measures have no special attributes
+        }

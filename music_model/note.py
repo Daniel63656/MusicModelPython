@@ -122,5 +122,15 @@ class Note():
     
     def __str__(self):
         if self._accidental is None:
-            return f"{self._note_name}{self.octave}({self.pitch})"
-        return f"{self._note_name}{self.accidental}{self.octave}({self.pitch})"
+            return f"{self._note_name.name}{self._octave}({self._pitch})"
+        return f"{self._note_name.name}{self._accidental}{self._octave}({self._pitch})"
+    
+    def to_json(self):
+        return {
+            "note_name": self._note_name.name,
+            "octave": self._octave,
+            "pitch": self._pitch,
+            "accidental": self._accidental.value if self._accidental is not None else None,
+            "previous_tied": False if self._previous_tied is None else True,
+            "next_tied": False if self._next_tied is None else True
+        }

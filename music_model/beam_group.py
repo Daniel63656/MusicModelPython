@@ -55,3 +55,10 @@ class BeamGroup(Range):
     def encloses(self, time: Fraction) -> bool:
         # make end key incluse
         return self.get_onset() <= time <= self.get_offset()
+
+    def to_json(self):
+        return {
+            "onset": self.get_onset(),
+            "offset": self.get_offset(),
+            "grace_beam": self._grace_beam,
+        }

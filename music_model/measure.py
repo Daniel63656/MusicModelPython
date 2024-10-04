@@ -64,16 +64,12 @@ class Measure(NavigableRange):
         self._part._score._repeat_ends.add(self.get_offset())
 
     def next(self) -> Optional[Self]:
-        idx = self._part._measures.bisect_right(self.get_onset())
-        if idx >= len(self._part._measures):
-            return None
-        return self._part._measures.values()[idx]
+        entry = self._part._measures.higher_entry(self.get_onset())
+        return None if entry is None else entry[1]
 
     def previous(self) -> Optional[Self]:
-        idx = self._part._measures.bisect_left(self.get_onset())
-        if idx < 0:
-            return None
-        return self._part._measures.values()[idx]
+        entry = self._part._measures.lower_entry(self.get_onset())
+        return None if entry is None else entry[1]
 
     def get_index(self) -> int:
-        return self._part._measures.bisect_right(self.get_onset()) - 1
+        return self._part._measures.index_of(self.get_onset())
