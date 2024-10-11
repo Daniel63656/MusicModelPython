@@ -2,6 +2,8 @@
 """
 To check wether tests compile:
     $ pytest --collect-only
+Run all tests from terminal:
+    $ pytest test
 To run a specific test from console and print its statements (from root directory):
     $ pytest -s test/test_file.py::test_function
 """

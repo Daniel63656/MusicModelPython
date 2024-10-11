@@ -4,7 +4,7 @@
   <identification>
     <encoding>
       <software>MuseScore 3.6.2</software>
-      <encoding-date>2024-09-28</encoding-date>
+      <encoding-date>2024-10-04</encoding-date>
       <supports element="accidental" type="yes"/>
       <supports element="beam" type="yes"/>
       <supports element="print" attribute="new-page" type="no"/>
@@ -56,12 +56,12 @@
       </score-part>
     </part-list>
   <part id="P1">
-    <measure number="1" width="409.84">
+    <measure number="1" width="175.02">
       <print>
         <system-layout>
           <system-margins>
             <left-margin>50.00</left-margin>
-            <right-margin>568.74</right-margin>
+            <right-margin>0.00</right-margin>
             </system-margins>
           <top-system-distance>70.00</top-system-distance>
           </system-layout>
@@ -79,61 +79,87 @@
           <sign>G</sign>
           <line>2</line>
           </clef>
+        <measure-style>
+          <multiple-rest>4</multiple-rest>
+          </measure-style>
         </attributes>
-      <note default-x="81.68" default-y="-25.00">
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-          </pitch>
-        <duration>1</duration>
+      <note>
+        <rest measure="yes"/>
+        <duration>4</duration>
         <voice>1</voice>
-        <type>quarter</type>
-        <stem>up</stem>
         </note>
-      <note default-x="81.68" default-y="-10.00">
-        <chord/>
+      </measure>
+    <measure number="2" width="114.50">
+      <note>
+        <rest measure="yes"/>
+        <duration>4</duration>
+        <voice>1</voice>
+        </note>
+      </measure>
+    <measure number="3" width="114.50">
+      <note>
+        <rest measure="yes"/>
+        <duration>4</duration>
+        <voice>1</voice>
+        </note>
+      </measure>
+    <measure number="4" width="114.50">
+      <note>
+        <rest measure="yes"/>
+        <duration>4</duration>
+        <voice>1</voice>
+        </note>
+      </measure>
+    <measure number="5" width="272.28">
+      <note default-x="13.00" default-y="-45.00">
         <pitch>
           <step>D</step>
-          <octave>5</octave>
+          <octave>4</octave>
           </pitch>
-        <duration>1</duration>
+        <duration>4</duration>
         <voice>1</voice>
-        <type>quarter</type>
-        <stem>up</stem>
+        <type>whole</type>
         </note>
-      <note>
-        <rest/>
-        <duration>1</duration>
-        <voice>1</voice>
-        <type>quarter</type>
-        </note>
-      <note default-x="240.43" default-y="-30.00">
+      <note default-x="13.00" default-y="-30.00">
+        <chord/>
         <pitch>
           <step>G</step>
           <octave>4</octave>
           </pitch>
-        <duration>1</duration>
-        <voice>1</voice>
-        <type>quarter</type>
-        <stem>up</stem>
-        </note>
-      <note>
-        <rest/>
-        <duration>1</duration>
-        <voice>1</voice>
-        <type>quarter</type>
-        </note>
-      <backup>
         <duration>4</duration>
-        </backup>
-      <note default-x="80.72" default-y="-45.00">
+        <voice>1</voice>
+        <type>whole</type>
+        </note>
+      <note default-x="13.00" default-y="-20.00">
+        <chord/>
         <pitch>
-          <step>D</step>
+          <step>B</step>
           <octave>4</octave>
           </pitch>
         <duration>4</duration>
-        <voice>2</voice>
+        <voice>1</voice>
         <type>whole</type>
+        </note>
+      </measure>
+    <measure number="6" width="114.50">
+      <attributes>
+        <measure-style>
+          <multiple-rest>3</multiple-rest>
+          </measure-style>
+        </attributes>
+      </measure>
+    <measure number="7" width="114.50">
+      <note>
+        <rest measure="yes"/>
+        <duration>4</duration>
+        <voice>1</voice>
+        </note>
+      </measure>
+    <measure number="8" width="116.15">
+      <note>
+        <rest measure="yes"/>
+        <duration>4</duration>
+        <voice>1</voice>
         </note>
       <barline location="right">
         <bar-style>light-heavy</bar-style>

@@ -113,11 +113,11 @@ class NoteType(Enum):
     def __init__(self, value: Fraction):
         # value is already set in __new__ but must be parameter of __init__
         self._base2_exponent = int(round(math.log(float(value)) / (math.log(2) + 1e-10)))
-        self._common_name = self.__common_name(value)
+        self._common_name = self._common_name(value)
         _note_type_by_common_name[self._common_name] = self
         _note_type_by_base2_exponent[self._base2_exponent] = self
 
-    def __common_name(self, value: Fraction):
+    def _common_name(self, value: Fraction):
         if value.denominator == 1:
             if value.numerator == 1:
                 return "whole"

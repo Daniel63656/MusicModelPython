@@ -40,7 +40,9 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                 for time in staff._events.keys():
                     denominators.add(time.denominator)
         # compute least common denominator
-        return functools.reduce(lambda x, y: abs(x*y) // math.gcd(x, y), denominators, 1)
+        division = functools.reduce(lambda x, y: abs(x*y) // math.gcd(x, y), denominators, 1)
+        return division // 4  # division is in quarter notes
+
     division = get_export_division(score)
 
     def to_division(time):
@@ -189,7 +191,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                 ET.SubElement(xml_note, "duration").text = str(to_division(rest.get_duration()))
                 ET.SubElement(xml_note, "voice").text = str(rest.get_voice()._id)
             else:
-                ET.SubElement(xml_note, "rest", measure="yes")
+                ET.SubElement(xml_note, "rest")
                 ET.SubElement(xml_note, "duration").text = str(to_division(rest.get_duration()))
                 ET.SubElement(xml_note, "voice").text = str(rest.get_voice()._id)
                 ET.SubElement(xml_note, "type").text = rest._note_type._common_name
@@ -296,7 +298,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
         def create_measure(xml_measure, part, measure):
             onset = measure._onset
             # left barline
-            xml_barline = ET.Element("barline")
+            xml_barline = ET.Element("barline", location="left")
             if part._score._endings.get(onset) is not None:
                 number = ",".join(str(num) for num in part._score._endings[onset]._numbers)
                 ET.SubElement(xml_barline, "ending", number=number, type="start")
@@ -392,7 +394,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                 xml_direction = ET.SubElement(xml_measure, "direction")
                 xml_direction.append(xml_direction_type)
             # right barline
-            xml_barline = ET.Element("barline")
+            xml_barline = ET.Element("barline", location="right")
             ending = part._score._endings.get_by_offset(onset)
             if ending is not None:
                 number = ",".join(str(num) for num in ending._numbers)
@@ -422,9 +424,18 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
     #     'value': 'yes'
     # })
     ET.SubElement(xml_encoding, 'supports', {
+        'element': 'accidental',
+        'type': 'yes'
+    })
+    ET.SubElement(xml_encoding, 'supports', {
         'element': 'beam',
         'type': 'yes'
     })
+    ET.SubElement(xml_encoding, 'supports', {
+        'element': 'stem',
+        'type': 'yes'
+    })
+
     create_default_page_layout(root)
     create_part_list(root, score)
     # create parts one by one

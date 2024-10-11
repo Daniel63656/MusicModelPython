@@ -4,6 +4,7 @@ from .enums import NoteName
 import typing as t
 if t.TYPE_CHECKING:
     from typing import Optional, Union
+    from fractions import Fraction
     from .chord import Chord, GraceChord
     from .enums import Accidental, KeySignature
 
@@ -65,6 +66,9 @@ class Note():
     
     def is_tie_end(self) -> bool:
         return self._previous_tied is not None and self._next_tied is None
+    
+    def get_onset(self) -> Fraction:
+        return self._chord.get_onset()
     
     @staticmethod
     def tie_notes(note1: Note, note2: Note):
