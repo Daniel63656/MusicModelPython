@@ -55,7 +55,6 @@ class Score(Range):
         """
         self._parts.append(part)
         part._score = self
-        part._idx = len(self._parts) - 1
         # insert standard measure if none exists
         if not part._measures:
             part.insert_measure(ZERO, Measure())

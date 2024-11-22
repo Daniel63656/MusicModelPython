@@ -38,6 +38,8 @@ class Clef():
         """
         Returns the shift in octave relative to the standard octave of the `ClefType`.
         """
+        if self._octave is None or self._clef_type.get_standard_octave() is None:
+            raise ValueError(f"{self._clef_type} does not have a standard octave.")
         return self._octave - self._clef_type.get_standard_octave()
 
     def get_C0_reference_line(self):

@@ -104,7 +104,7 @@ class Ending(RepeatAction, Range):
         self._numbers = numbers
 
     def jump(self) -> Fraction:
-        # applied skip if ending not appled
+        # applied skip if ending not applied
         return self._offset
     
     def get_numbers(self) -> set[int]:

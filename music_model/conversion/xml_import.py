@@ -253,7 +253,7 @@ def _import_xml(tree) -> Score:
                         if child.tag == "tuplet":
                             if child.attrib.get("type") == "start":
                                 tuplet = process_tuplet(child, time_mod)
-                                voice_stacks[voice_id][-1].append_tuplet(tuplet)    # append directly to voice so that functions work properly
+                                voice_stacks[voice_id][-1].append_tuplet(tuplet)    # append directly to site so that functions work properly
                                 voice_stacks[voice_id].append(tuplet)
                             elif child.attrib.get("type") == "stop":
                                 num_tuplet_ends += 1    # delay tuplet removal from stack after note has gotten correct site
@@ -314,7 +314,7 @@ def _import_xml(tree) -> Score:
                         duration *= Fraction(time_mod[0], time_mod[3])
                     if is_chord:
                         chord_to_add = site._elements.values()[-1]
-                        assert isinstance(chord_to_add, Chord), "Expected to find chord as last element in voice"
+                        assert isinstance(chord_to_add, Chord), "Expected to find chord as last element in site."
                         note = Note(note_name, octave, pitch, accidental)
                         tie_if_needed(note, tie_start, tie_stop)
                         chord_to_add.add_note(note)
@@ -328,8 +328,6 @@ def _import_xml(tree) -> Score:
                             tie_if_needed(note, tie_start, tie_stop)
                             chord_rest = site.insert_note(current_onset, note, staff, note_type, dots, stem)
                             chord_rest._expressions = expressions
-                            if has_fermata:
-                                chord_rest._event._fermata = True
                             # append potential grace chords with beams (can occur within normal beam)
                             for grace_info in grace_chords:
                                 chord_rest.add_grace_chord(grace_info[0])
@@ -425,6 +423,7 @@ def _import_xml(tree) -> Score:
                     onset, octavation = octave_shifts[staff]
                     octave_shift = OctaveShift(staff, onset, cursor, octavation)
                     staff.insert_octave_shift(octave_shift)
+                    del octave_shifts[staff]
             if found_dynamics is not None:
                 staff._dynamics[cursor] = Dynamics(found_dynamics)
         

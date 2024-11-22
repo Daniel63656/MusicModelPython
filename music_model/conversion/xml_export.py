@@ -82,6 +82,9 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
         handled_staff_directions = set()
         handled_octave_shift_ends = set()   # need separate set as they are placed at offsets
         beam_info = {}  # map ChorRests to list of beam info once start of BeamGroup is encountered
+        #number levels for concurrent objects, see https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/number-level/
+        octave_shift_number_level = {}  # map OctaveShift to current number level in document order # TODO within part?
+        octave_shift_number_level = {}  # map Slur to current number level in document order
 
         def create_backup(xml_measure, duration):
             backup = ET.SubElement(xml_measure, "backup")
@@ -327,6 +330,7 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                     onset = measure._onset
                 # loop over elements of voice within measure
                 for chord_rest in voice.get_chords_and_rests(measure._onset, measure.get_offset(), (True, False)):
+                    staff = chord_rest.get_staff()
                     # forward to element's onset if needed
                     if onset < chord_rest.get_onset():
                         create_forward(xml_measure, chord_rest.get_onset() - onset)
@@ -339,8 +343,6 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                     # place pre <note> directions if not already handled
                     if pair not in handled_staff_directions:
                         xml_direction_type = ET.Element("direction-type")
-                        staff = pair[0]
-                        onset = pair[1]
                         # dynamics
                         dynamics = staff._dynamics.get(onset)
                         if dynamics:
@@ -348,13 +350,15 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                         # octave shift start
                         octave_shift = staff._octave_shifts.get(onset)
                         if octave_shift:
-                            octave_shift = octave_shift._octavation.value
-                            ET.SubElement(xml_direction_type, "octave-shift", type="down" if octave_shift > 0 else "up", size=str(abs(octave_shift*7) + 1), number="1")
+                            shift = octave_shift._octavation.value
+                            number = len(octave_shift_number_level)
+                            ET.SubElement(xml_direction_type, "octave-shift", type="down" if shift > 0 else "up", size=str(abs(shift*7) + 1), number=str(number+1))
+                            octave_shift_number_level[octave_shift] = number
                         # place direction if non-empty
                         if len(xml_direction_type) > 0:
                             xml_direction = ET.SubElement(xml_measure, "direction")
                             if octave_shift:    # set direction according to octave-shift if one starts
-                                xml_direction.set("placement", "above" if octave_shift > 0 else "below")
+                                xml_direction.set("placement", "above" if octave_shift._octavation.value > 0 else "below")
                             xml_direction.append(xml_direction_type)
                             ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
                     # create element itself
@@ -371,8 +375,10 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
                         xml_direction = ET.SubElement(xml_measure, "direction")
                         xml_direction_type = ET.SubElement(xml_direction, "direction-type")
                         shift = octave_shift._octavation.value
-                        ET.SubElement(xml_direction_type, "octave-shift", type="stop", size=str(abs(shift*7) + 1), number="1")
+                        number = octave_shift_number_level[octave_shift]
+                        ET.SubElement(xml_direction_type, "octave-shift", type="stop", size=str(abs(shift*7) + 1), number=str(number+1))
                         ET.SubElement(xml_direction, "staff").text = str(staff._id + 1)
+                        octave_shift_number_level.pop(octave_shift)
                     # increment onset and finalize
                     onset += chord_rest.get_duration()
                     handled_staff_attributes.add(pair)

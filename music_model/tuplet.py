@@ -39,7 +39,7 @@ class Tuplet(Site, Element):
         self._actual_count = actual_count
         self._actual_type = normal_type if actual_type is None else actual_type
         self._actual_dots = normal_dots if actual_dots is None else actual_dots
-        self._time_mod = normal_type.get_value(normal_dots)*normal_count / (actual_type.get_value(actual_dots)*actual_count)
+        self._time_mod = normal_type.get_value(normal_dots)*normal_count / (self._actual_type.get_value(self._actual_dots)*actual_count)
 
     def get_normal_count(self) -> int:
         return self._normal_count

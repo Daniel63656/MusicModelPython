@@ -11,6 +11,7 @@ resources_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resour
 def test_musicxml_io():
     for file in os.listdir(resources_dir):
         filepath = os.path.join(resources_dir, file)
+        print(filepath)
         score = import_xml(filepath)
         # check export for crashes
         parse_to_xml(score)
