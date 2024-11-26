@@ -3,7 +3,6 @@ from fractions import Fraction
 from xml.etree import ElementTree as ET
 import xml.dom.minidom as dom
 import os, math, functools, subprocess, tempfile
-from IPython.display import display, Image
 XML_VERSION = 3.1
 PATH_TO_MUSESCORE_EXE = "C:/Program Files/MuseScore 3/bin/MuseScore3.exe"
 # text mappings
@@ -463,6 +462,7 @@ def write_xml_file(score: Score, filepath: str):
 
 
 def show(score: Score, dpi: int = 100, margin_in_px: int = 0):
+    from IPython.display import display, Image  # dependency only when needed
     # for reasons only god knows, if there is no line break after <mordent/>,
     # MuseScore import will not work from that point on -> use pretty
     xml_content = parse_to_xml(score, pretty=True)
