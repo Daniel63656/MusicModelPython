@@ -82,8 +82,8 @@ def parse_to_xml(score: Score, pretty: bool=True) -> str:
         handled_octave_shift_ends = set()   # need separate set as they are placed at offsets
         beam_info = {}  # map ChorRests to list of beam info once start of BeamGroup is encountered
         #number levels for concurrent objects, see https://www.w3.org/2021/06/musicxml40/musicxml-reference/data-types/number-level/
-        octave_shift_number_level = {}  # map OctaveShift to current number level in document order # TODO within part?
-        octave_shift_number_level = {}  # map Slur to current number level in document order
+        octave_shift_number_level = {}  # map OctaveShift to current number level in document order
+        #slur_number_level = {}  # map Slur to current number level in document order
 
         def create_backup(xml_measure, duration):
             backup = ET.SubElement(xml_measure, "backup")
